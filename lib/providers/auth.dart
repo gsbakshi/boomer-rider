@@ -135,6 +135,7 @@ class Auth with ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await _auth.signOut();
     _token = null;
     _userId = null;
     _expiryDate = null;
