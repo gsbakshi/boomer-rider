@@ -31,10 +31,6 @@
 .pub/
 /build/
 
-/android/
-/ios/
-/web/
-
 # Web related
 lib/generated_plugin_registrant.dart
 
@@ -51,5 +47,8 @@ app.*.map.json
 
 #Firebase related files
 firebase_utils.dart
+
+#Secrets
 google-services.json
 GoogleService-Info.plist
+Api-Keys-Info.plist
