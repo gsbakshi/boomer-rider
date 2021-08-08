@@ -74,7 +74,13 @@ final themeData = ThemeData(
   appBarTheme: AppBarTheme(
     backgroundColor: Color(0xff423833),
     iconTheme: IconThemeData(
-      color: Colors.grey,
+      color: Color(0xffD1793F),
+    ),
+    textTheme: TextTheme(
+      headline6: TextStyle(
+        color: Color(0xffD1793F),
+        fontSize: 20,
+      ),
     ),
   ),
 );
