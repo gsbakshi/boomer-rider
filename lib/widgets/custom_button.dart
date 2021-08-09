@@ -19,7 +19,7 @@ class CustomButton extends StatelessWidget {
         child: Text(label),
         style: ElevatedButton.styleFrom(
           primary: Theme.of(context).accentColor,
-          onPrimary: Theme.of(context).primaryColor,
+          onPrimary: Color(0xffF8EBE2),
           textStyle: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,

@@ -53,21 +53,43 @@ class MyApp extends StatelessWidget {
 }
 
 final themeData = ThemeData(
-  primarySwatch: Colors.grey,
-  primaryColor: Colors.white,
+  brightness: Brightness.dark,
+  // primarySwatch: Colors.grey,
+  primaryColor: Color(0xff423833),
+  primaryColorLight: Color(0xffA28F86),
+  primaryColorDark: Color(0xff342C28),
   accentColor: Color(0xffD1793F),
   fontFamily: 'Open Sans',
   focusColor: Color(0xffD1793F),
   textTheme: TextTheme(
+    headline1: TextStyle(
+      fontSize: 14,
+      color: Color(0xff8A756B),
+      fontWeight: FontWeight.w700,
+    ),
+    headline2: TextStyle(
+      fontSize: 14,
+      color: Color(0xff6D5D54),
+      fontWeight: FontWeight.w500,
+    ),
+    headline3: TextStyle(
+      color: Color(0xffB8AAA3),
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+    ),
     headline4: TextStyle(
-      fontSize: 24,
+      fontSize: 20,
       color: Color(0xffD1793F),
       fontWeight: FontWeight.w700,
     ),
     headline5: TextStyle(
       fontSize: 20,
-      color: Colors.white,
+      color: Color(0xffFBFAF9),
       fontWeight: FontWeight.w700,
+    ),
+    headline6: TextStyle(
+      color: Color(0xffA28F86),
+      fontSize: 20,
     ),
   ),
   scaffoldBackgroundColor: Color(0xff423833),
@@ -78,7 +100,7 @@ final themeData = ThemeData(
     ),
     textTheme: TextTheme(
       headline6: TextStyle(
-        color: Color(0xffD1793F),
+        color: Color(0xffA28F86),
         fontSize: 20,
       ),
     ),

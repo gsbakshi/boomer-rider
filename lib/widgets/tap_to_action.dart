@@ -24,7 +24,10 @@ class TapToActionText extends StatelessWidget {
         child: RichText(
           text: TextSpan(
             text: label,
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xffB8AAA3),
+            ),
             children: <TextSpan>[
               TextSpan(
                 text: tapLabel,

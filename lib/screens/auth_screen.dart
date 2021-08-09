@@ -172,9 +172,9 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
     _passwordController.dispose();
     _focusNode.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -306,9 +306,11 @@ class _AuthScreenState extends State<AuthScreen>
                       onSaved: (value) {
                         _authData['password'] = value!;
                       },
-                      onFieldSubmitted: (_) {
-                        FocusScope.of(context).requestFocus(_focusNode);
-                      },
+                      onFieldSubmitted: _authMode == AuthMode.Signup
+                          ? (_) {
+                              FocusScope.of(context).requestFocus(_focusNode);
+                            }
+                          : null,
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {
@@ -318,7 +320,7 @@ class _AuthScreenState extends State<AuthScreen>
                         icon: Icon(
                           _obscure ? Icons.visibility : Icons.visibility_off,
                         ),
-                        color: Colors.grey,
+                        color: Color(0xffB8AAA3),
                       ),
                     ),
                     if (_authMode == AuthMode.Signup)
