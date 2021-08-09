@@ -12,18 +12,12 @@ class DecoratedWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: Theme.of(context).primaryColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          // BoxShadow(
-          //   color: Colors.black.withOpacity(0.8),
-          //   blurRadius: 12,
-          //   spreadRadius: 0.5,
-          //   offset: Offset(0.7, 0.7),
-          // ),
           BoxShadow(
             color: Theme.of(context).primaryColorDark,
-            blurRadius: 6,
+            blurRadius: 3,
             spreadRadius: 0.5,
             offset: Offset(0.7, 0.7),
           ),
