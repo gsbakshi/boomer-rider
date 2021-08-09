@@ -10,7 +10,7 @@ import '../widgets/splashed_flex.dart';
 import '../widgets/side_tabbed_title.dart';
 import '../widgets/tap_to_action.dart';
 import '../widgets/custom_button.dart';
-import '../widgets/custom_text_field.dart';
+import '../widgets/custom_textfield.dart';
 
 enum AuthMode { Signup, Login }
 

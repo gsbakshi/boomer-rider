@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import './providers/auth.dart';
 
 import './screens/splash_screen.dart';
 import './screens/auth_screen.dart';
 import './screens/home_screen.dart';
+import './screens/search_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
       SplashScreen.routeName: (ctx) => SplashScreen(),
       AuthScreen.routeName: (ctx) => AuthScreen(),
       HomeScreen.routeName: (ctx) => HomeScreen(),
+      SearchScreen.routeName: (ctx) => SearchScreen(),
     };
   }
 }
