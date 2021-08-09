@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import './providers/auth.dart';
@@ -10,6 +11,7 @@ import './screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Firebase.initializeApp();
   runApp(MyApp());
 }
@@ -54,13 +56,14 @@ class MyApp extends StatelessWidget {
 
 final themeData = ThemeData(
   brightness: Brightness.dark,
-  // primarySwatch: Colors.grey,
   primaryColor: Color(0xff423833),
   primaryColorLight: Color(0xffA28F86),
   primaryColorDark: Color(0xff342C28),
   accentColor: Color(0xffD1793F),
   fontFamily: 'Open Sans',
   focusColor: Color(0xffD1793F),
+  scaffoldBackgroundColor: Color(0xff423833),
+  canvasColor: Color(0xffB8AAA3),
   textTheme: TextTheme(
     headline1: TextStyle(
       fontSize: 14,
@@ -91,8 +94,11 @@ final themeData = ThemeData(
       color: Color(0xffA28F86),
       fontSize: 20,
     ),
+    bodyText2: TextStyle(
+      color: Color(0xffB8AAA3),
+      fontSize: 14,
+    ),
   ),
-  scaffoldBackgroundColor: Color(0xff423833),
   appBarTheme: AppBarTheme(
     backgroundColor: Color(0xff423833),
     iconTheme: IconThemeData(
