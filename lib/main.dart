@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import './providers/auth.dart';
+import './providers/user_data.dart';
 
 import './screens/splash_screen.dart';
 import './screens/auth_screen.dart';
@@ -25,6 +26,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(
           value: Auth(),
         ),
+        ChangeNotifierProxyProvider<Auth, UserData>(
+          create: (_) => UserData(),
+          update: (_, auth, userData) => userData!..update(auth),
+        )
       ],
       child: Consumer<Auth>(
         builder: (ctx, auth, _) => MaterialApp(

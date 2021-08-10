@@ -7,10 +7,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../helpers/data_tranform.dart';
 
-import '../widgets/icon_card.dart';
 import '../widgets/app_drawer.dart';
-import '../widgets/search_button.dart';
-import '../widgets/decorated_wrapper.dart';
+import '../widgets/select_destination.dart';
 import '../widgets/floating_appbar_wrapper_with_textfield.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -59,8 +57,34 @@ class _HomeScreenState extends State<HomeScreen> {
       position.latitude,
       position.longitude,
     );
-    final addressData = convertPlacemarksToMap(placemarks);
+    final addressData = convertGeoCodingToMap(placemarks);
     _currentLocationInputController.text = addressData['name'] as String;
+  }
+
+  Future<void> getLatLng(String value) async {
+    List<Location> locations = await locationFromAddress(value);
+    final latLngData = convertGeoCodingToMap(locations);
+    currentPosition = Position(
+      latitude: double.tryParse(latLngData['latitude']!)!,
+      longitude: double.tryParse(latLngData['longitude']!)!,
+      timestamp: DateTime.tryParse(latLngData['timestamp']!)!,
+      accuracy: 0.0,
+      altitude: 0.0,
+      heading: 0.0,
+      speed: 0.0,
+      speedAccuracy: 0.0,
+    );
+    LatLng latLngPosition = LatLng(
+      currentPosition.latitude,
+      currentPosition.longitude,
+    );
+    CameraPosition cameraPosition = new CameraPosition(
+      target: latLngPosition,
+      zoom: 14,
+    );
+    newMapController.animateCamera(
+      CameraUpdate.newCameraPosition(cameraPosition),
+    );
   }
 
   void _openDrawer() {
@@ -75,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _currentLocationInputController.dispose();
+    newMapController.dispose();
     super.dispose();
   }
 
@@ -108,67 +133,17 @@ class _HomeScreenState extends State<HomeScreen> {
               onTapLeadingIcon: _openDrawer,
               hintLabel: 'Your Location',
               controller: _currentLocationInputController,
+              onSubmitted: (value) {
+                getLatLng(value);
+              },
             ),
           ),
           Positioned(
             bottom: 0,
             child: SafeArea(
-              child: Container(
-                width: query.width,
+              child: SelectDestination(
                 height: query.height * 0.29,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: DecoratedWrapper(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 18,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 10),
-                        Text(
-                          'Hi There',
-                          style: Theme.of(context).textTheme.headline1,
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Where to?',
-                          style: Theme.of(context).textTheme.headline4,
-                        ),
-                        SizedBox(height: 16),
-                        SearchButton(),
-                        SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconCard(
-                              icon: Icons.home,
-                              label: 'Add Home',
-                              onTapHandler: () {
-                                print('Add Home');
-                              },
-                            ),
-                            IconCard(
-                              icon: Icons.work,
-                              label: 'Add Work',
-                              onTapHandler: () {
-                                print('Add Work');
-                              },
-                            ),
-                            IconCard(
-                              icon: Icons.location_pin,
-                              label: 'Add Other',
-                              onTapHandler: () {
-                                print('Add Other');
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                width: query.width,
               ),
             ),
           ),

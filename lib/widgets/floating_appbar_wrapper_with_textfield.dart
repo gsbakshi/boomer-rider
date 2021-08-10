@@ -38,7 +38,7 @@ class FloatingAppBarWrapperWithTextField extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
-            textInputAction: TextInputAction.done,
+            textInputAction: TextInputAction.send,
             onSubmitted: onSubmitted,
             decoration: InputDecoration(
               hintText: hintLabel,

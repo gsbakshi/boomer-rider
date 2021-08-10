@@ -1,4 +1,4 @@
-Map<String, String> convertPlacemarksToMap(List placemarks) {
+Map<String, String> convertGeoCodingToMap(List placemarks) {
   final Map<String, String> addressData = {};
   final values = placemarks[0].toString().split(',');
   for (var value in values) {

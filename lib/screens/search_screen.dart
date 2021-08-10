@@ -12,6 +12,17 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final _pickUpController = TextEditingController();
+
+  final _dropOffController = TextEditingController();
+
+  @override
+  void dispose() {
+    _pickUpController.dispose();
+    _dropOffController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,6 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
           SearchField(
             icon: Icons.my_location,
             textField: TextField(
+              controller: _pickUpController,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 hintText: 'Pick up location',
@@ -34,12 +46,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 border: InputBorder.none,
               ),
+              onSubmitted: (value) {},
             ),
           ),
           SearchField(
             icon: Icons.location_pin,
             textField: TextField(
-              textInputAction: TextInputAction.done,
+              controller: _dropOffController,
+              textInputAction: TextInputAction.send,
               decoration: InputDecoration(
                 hintText: 'Where to?',
                 hintStyle: TextStyle(
@@ -47,11 +61,21 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 border: InputBorder.none,
               ),
+              onSubmitted: (value) {},
             ),
           ),
           Container(
             color: Theme.of(context).primaryColorDark,
             height: 20,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(height: 70),
+                ],
+              ),
+            ),
           ),
         ],
       ),
