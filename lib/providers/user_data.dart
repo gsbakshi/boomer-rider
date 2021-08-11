@@ -9,17 +9,16 @@ import 'auth.dart';
 
 class UserData with ChangeNotifier {
   void update(Auth auth) {
-    authToken = auth.token!;
-    userId = auth.userId!;
+    authToken = auth.token;
+    userId = auth.userId;
     addresses;
     print(authToken);
     print(userId);
     print(addresses);
   }
 
-  late String authToken;
-  late String userId;
-
+  late String? authToken;
+  late String? userId;
   // Future<String?> get name async {
   //   try {
 
