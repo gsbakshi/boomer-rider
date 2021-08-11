@@ -1,11 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../helpers/data_tranform.dart';
+import '../providers/map_provider.dart';
+
+import '../helpers/http_exception.dart';
 
 import '../widgets/app_drawer.dart';
 import '../widgets/select_destination.dart';
@@ -29,63 +30,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final _currentLocationInputController = TextEditingController();
 
-  late Position currentPosition;
-
   static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
-
-  Future<void> locatePosition() async {
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    currentPosition = position;
-
-    LatLng latLngPosition = LatLng(position.latitude, position.longitude);
-    CameraPosition cameraPosition = new CameraPosition(
-      target: latLngPosition,
-      zoom: 14,
-    );
-
-    newMapController.animateCamera(
-      CameraUpdate.newCameraPosition(cameraPosition),
-    );
-
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
-    final addressData = convertGeoCodingToMap(placemarks);
-    _currentLocationInputController.text = addressData['name'] as String;
-  }
-
-  Future<void> getLatLng(String value) async {
-    List<Location> locations = await locationFromAddress(value);
-    final latLngData = convertGeoCodingToMap(locations);
-    currentPosition = Position(
-      latitude: double.tryParse(latLngData['latitude']!)!,
-      longitude: double.tryParse(latLngData['longitude']!)!,
-      timestamp: DateTime.tryParse(latLngData['timestamp']!)!,
-      accuracy: 0.0,
-      altitude: 0.0,
-      heading: 0.0,
-      speed: 0.0,
-      speedAccuracy: 0.0,
-    );
-    LatLng latLngPosition = LatLng(
-      currentPosition.latitude,
-      currentPosition.longitude,
-    );
-    CameraPosition cameraPosition = new CameraPosition(
-      target: latLngPosition,
-      zoom: 14,
-    );
-    newMapController.animateCamera(
-      CameraUpdate.newCameraPosition(cameraPosition),
-    );
-  }
 
   void _openDrawer() {
     _scaffoldKey.currentState!.openDrawer();
@@ -103,6 +51,52 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  void _snackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            color: Theme.of(context).primaryColorDark,
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+        backgroundColor: Theme.of(context).accentColor,
+      ),
+    );
+  }
+
+  Future<void> onMapCreated(GoogleMapController controller) async {
+    _controller.complete(controller);
+    newMapController = controller;
+    try {
+      // await Provider.of<MapProvider>(context, listen: false)
+      //     .locatePositionFromPlacemarks(
+      //   newMapController,
+      //   _currentLocationInputController,
+      // );
+      await Provider.of<MapProvider>(context, listen: false).locatePosition(
+        newMapController,
+        _currentLocationInputController,
+      );
+    } on HttpException catch (error) {
+      var errorMessage = 'Request Failed';
+      _snackbar(errorMessage);
+      print(error);
+    } catch (error) {
+      const errorMessage = 'Could not locate you. Please try again later.';
+      _snackbar(errorMessage);
+      print(error);
+    }
+  }
+
+  void onLocationInput(String value) async =>
+      Provider.of<MapProvider>(context, listen: false).getLatLng(
+        value,
+        newMapController,
+      );
+
   @override
   Widget build(BuildContext context) {
     var query = MediaQuery.of(context).size;
@@ -118,11 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
               right: 16,
             ),
             initialCameraPosition: _kGooglePlex,
-            onMapCreated: (GoogleMapController controller) {
-              _controller.complete(controller);
-              newMapController = controller;
-              locatePosition();
-            },
+            onMapCreated: onMapCreated,
           ),
           Positioned(
             top: 0,
@@ -133,9 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onTapLeadingIcon: _openDrawer,
               hintLabel: 'Your Location',
               controller: _currentLocationInputController,
-              onSubmitted: (value) {
-                getLatLng(value);
-              },
+              onSubmitted: onLocationInput,
             ),
           ),
           Positioned(
