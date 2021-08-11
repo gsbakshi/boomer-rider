@@ -50,6 +50,9 @@ key.jks
 #Firebase related files
 firebase_utils.dart
 
+#GCP related files
+platform_keys.dart
+
 #Secrets
 google-services.json
 GoogleService-Info.plist
