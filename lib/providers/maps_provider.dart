@@ -10,7 +10,7 @@ import '../helpers/platform_keys.dart';
 import '../helpers/data_tranform.dart';
 import '../helpers/http_exception.dart';
 
-class MapProvider with ChangeNotifier {
+class MapsProvider with ChangeNotifier {
   late Position _currentPosition;
 
   Position get currentPosition => _currentPosition;

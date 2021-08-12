@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'providers/auth.dart';
+import 'providers/user_provider.dart';
+import 'providers/maps_provider.dart';
 import 'providers/address_provider.dart';
-import 'providers/map_provider.dart';
 
-import 'screens/splash_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
+import 'screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,12 +29,16 @@ class MyApp extends StatelessWidget {
           value: Auth(),
         ),
         ChangeNotifierProvider.value(
-          value: MapProvider(),
+          value: MapsProvider(),
         ),
         ChangeNotifierProxyProvider<Auth, AddressProvider>(
           create: (_) => AddressProvider(),
+          update: (_, auth, addressData) => addressData!..update(auth),
+        ),
+        ChangeNotifierProxyProvider<Auth, UserProvider>(
+          create: (_) => UserProvider(),
           update: (_, auth, userData) => userData!..update(auth),
-        )
+        ),
       ],
       child: Consumer<Auth>(
         builder: (ctx, auth, _) => MaterialApp(

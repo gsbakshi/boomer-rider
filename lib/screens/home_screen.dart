@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../providers/address_provider.dart';
-import '../providers/map_provider.dart';
+import '../providers/maps_provider.dart';
 
 import '../helpers/http_exception.dart';
 
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller.complete(controller);
     newMapController = controller;
     try {
-      final mapProvider = Provider.of<MapProvider>(context, listen: false);
+      final mapProvider = Provider.of<MapsProvider>(context, listen: false);
       await mapProvider.locatePosition(
         newMapController,
         _currentLocationInputController,
@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void onLocationInput(String value) async {
     // TODO Geocoding using Google API
-    Provider.of<MapProvider>(context, listen: false).getLatLng(
+    Provider.of<MapsProvider>(context, listen: false).getLatLng(
       value,
       newMapController,
     );
