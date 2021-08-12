@@ -11,7 +11,9 @@ import '../helpers/data_tranform.dart';
 import '../helpers/http_exception.dart';
 
 class MapProvider with ChangeNotifier {
-  late Position currentPosition;
+  late Position _currentPosition;
+
+  Position get currentPosition => _currentPosition;
 
   Future<String> _reverseGeocode(Position position) async {
     try {
@@ -24,20 +26,26 @@ class MapProvider with ChangeNotifier {
       if (data['error_message'] != null) {
         throw HttpException(data['error_message']);
       }
-      print(response.body);
-      address = data['results'][0]['formatted_address'];
+
+      String street = data['results'][0]['address_components'][0]['long_name'];
+      String road = data['results'][0]['address_components'][1]['long_name'];
+      String locality =
+          data['results'][0]['address_components'][2]['long_name'];
+      String state = data['results'][0]['address_components'][4]['long_name'];
+
+      address = street + ', ' + road + ' ' + locality + ', ' + state;
       return address;
     } catch (error) {
       throw error;
     }
   }
 
-  Future<void> _getPosition(GoogleMapController mapController) async {
+  Future<void> _getMapPosition(GoogleMapController mapController) async {
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    currentPosition = position;
+    _currentPosition = position;
 
     LatLng latLngPosition = LatLng(position.latitude, position.longitude);
     CameraPosition cameraPosition = new CameraPosition(
@@ -55,32 +63,9 @@ class MapProvider with ChangeNotifier {
     TextEditingController textController,
   ) async {
     try {
-      print('Locate Position - Starting');
-      await _getPosition(mapController);
-      print('Reverse Geocode - Starting');
-      String address = await _reverseGeocode(currentPosition);
-      print('Address : ' + address);
+      await _getMapPosition(mapController);
+      String address = await _reverseGeocode(_currentPosition);
       textController.text = address;
-    } catch (error) {
-      rethrow;
-    }
-  }
-
-  Future<void> locatePositionFromPlacemarks(
-    GoogleMapController mapController,
-    TextEditingController textController,
-  ) async {
-    try {
-      await _getPosition(mapController);
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        currentPosition.latitude,
-        currentPosition.longitude,
-      );
-
-      final addressData = convertGeoCodingToMap(placemarks);
-
-      textController.text = addressData['name'] as String;
-      print('Address : ' + addressData.toString());
     } catch (error) {
       rethrow;
     }
@@ -94,7 +79,7 @@ class MapProvider with ChangeNotifier {
 
     final latLngData = convertGeoCodingToMap(locations);
 
-    currentPosition = Position(
+    _currentPosition = Position(
       latitude: double.tryParse(latLngData['latitude']!)!,
       longitude: double.tryParse(latLngData['longitude']!)!,
       timestamp: DateTime.tryParse(latLngData['timestamp']!)!,
@@ -106,8 +91,8 @@ class MapProvider with ChangeNotifier {
     );
 
     LatLng latLngPosition = LatLng(
-      currentPosition.latitude,
-      currentPosition.longitude,
+      _currentPosition.latitude,
+      _currentPosition.longitude,
     );
 
     CameraPosition cameraPosition = new CameraPosition(
