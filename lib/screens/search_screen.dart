@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/user_data.dart';
 
 import '../widgets/search_field.dart';
 
@@ -15,6 +18,14 @@ class _SearchScreenState extends State<SearchScreen> {
   final _pickUpController = TextEditingController();
 
   final _dropOffController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _pickUpController.text =
+        Provider.of<UserData>(context, listen: false).pickupLocation.address ??
+            '';
+  }
 
   @override
   void dispose() {
