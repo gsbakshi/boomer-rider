@@ -74,7 +74,8 @@ final themeData = ThemeData(
   fontFamily: 'Open Sans',
   focusColor: Color(0xffD1793F),
   scaffoldBackgroundColor: Color(0xff423833),
-  canvasColor: Color(0xffB8AAA3),
+  canvasColor: Color(0xff342C28),
+  // canvasColor: Color(0xffB8AAA3),
   textTheme: TextTheme(
     headline1: TextStyle(
       fontSize: 14,
