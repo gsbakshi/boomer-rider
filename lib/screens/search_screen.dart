@@ -30,8 +30,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
-    _pickUpController.clear();
-    _dropOffController.clear();
     _pickUpController.dispose();
     _dropOffController.dispose();
     super.dispose();
