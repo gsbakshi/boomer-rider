@@ -19,19 +19,40 @@ class _SearchScreenState extends State<SearchScreen> {
 
   final _dropOffController = TextEditingController();
 
+  bool _isInit = true;
+
+  late final dropOffLocation;
+
   @override
   void initState() {
     super.initState();
-    _pickUpController.text =
-        Provider.of<UserData>(context, listen: false).pickupLocation.address ??
-            '';
   }
 
   @override
   void dispose() {
+    _pickUpController.clear();
+    _dropOffController.clear();
     _pickUpController.dispose();
     _dropOffController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (_isInit) {
+      _pickUpController.text = Provider.of<UserData>(context, listen: false)
+              .pickupLocation
+              .address ??
+          '';
+      final addressId = ModalRoute.of(context)!.settings.arguments as String?;
+      if (addressId != null) {
+        dropOffLocation =
+            Provider.of<UserData>(context).findAddressById(addressId);
+        _dropOffController.text = dropOffLocation.address;
+      }
+    }
+    _isInit = false;
+    super.didChangeDependencies();
   }
 
   @override
@@ -60,6 +81,18 @@ class _SearchScreenState extends State<SearchScreen> {
               onSubmitted: (value) {},
             ),
           ),
+          // Container(
+          //   color: Theme.of(context).primaryColorDark,
+          //   child: Row(
+          //     children: [
+          //       Expanded(child: Container()),
+          //       Padding(
+          //         padding: const EdgeInsets.only(right: 16.0),
+          //         child: Icon(Icons.swap_vert),
+          //       ),
+          //     ],
+          //   ),
+          // ),
           SearchField(
             icon: Icons.location_pin,
             textField: TextField(

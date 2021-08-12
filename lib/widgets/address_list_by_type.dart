@@ -1,3 +1,4 @@
+import 'package:boomer_rider/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,16 +18,21 @@ class AddressListByType extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var addressList =
-        Provider.of<UserData>(context, listen: false).addressByType(label);
+    final provider = Provider.of<UserData>(context, listen: false);
+    final addressList = provider.addressByType(label);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Saved Addresses - $label',
+            label,
             style: Theme.of(context).textTheme.headline4,
+          ),
+          SizedBox(height: 2),
+          Text(
+            'Select Drop Off Location',
+            style: Theme.of(context).textTheme.headline2,
           ),
           Container(
             margin: const EdgeInsets.only(bottom: 30, top: 10, right: 120),
@@ -53,6 +59,12 @@ class AddressListByType extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      onTap: () {
+                        Navigator.of(context).popAndPushNamed(
+                          SearchScreen.routeName,
+                          arguments: address.id,
+                        );
+                      },
                       leading: Icon(
                         icon,
                         color: Color(0xffB8AAA3),

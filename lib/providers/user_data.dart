@@ -45,6 +45,10 @@ class UserData with ChangeNotifier {
     return _addresses.where((address) => address.tag == label).toList();
   }
 
+  Address findAddressById(String id) {
+    return _addresses.firstWhere((address) => address.id == id);
+  }
+
   Future<void> saveAddress(Address address) async {
     final url = '$usersRef/$userId/addresses.json?auth=$authToken';
     try {
