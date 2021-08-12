@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/user_data.dart';
+import '../providers/address_provider.dart';
 
 import '../widgets/search_field.dart';
 
@@ -40,14 +40,14 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void didChangeDependencies() {
     if (_isInit) {
-      _pickUpController.text = Provider.of<UserData>(context, listen: false)
-              .pickupLocation
-              .address ??
-          '';
+      final addressProvider = Provider.of<AddressProvider>(
+        context,
+        listen: false,
+      );
+      _pickUpController.text = addressProvider.pickupLocation.address ?? '';
       final addressId = ModalRoute.of(context)!.settings.arguments as String?;
       if (addressId != null) {
-        dropOffLocation =
-            Provider.of<UserData>(context).findAddressById(addressId);
+        dropOffLocation = addressProvider.findAddressById(addressId);
         _dropOffController.text = dropOffLocation.address;
       }
     }

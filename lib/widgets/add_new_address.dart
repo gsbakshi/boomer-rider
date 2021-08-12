@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'custom_button.dart';
 import 'custom_textfield.dart';
 
-class CreateNewAddress extends StatefulWidget {
-  const CreateNewAddress({
+class AddNewAddress extends StatefulWidget {
+  const AddNewAddress({
     Key? key,
     required this.addAddress,
     required this.label,
@@ -16,10 +16,10 @@ class CreateNewAddress extends StatefulWidget {
   final String label;
 
   @override
-  _CreateNewAddressState createState() => _CreateNewAddressState();
+  _AddNewAddressState createState() => _AddNewAddressState();
 }
 
-class _CreateNewAddressState extends State<CreateNewAddress> {
+class _AddNewAddressState extends State<AddNewAddress> {
   final GlobalKey<FormState> _formKey = GlobalKey();
 
   final _addressController = TextEditingController();

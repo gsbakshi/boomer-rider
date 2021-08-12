@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../helpers/http_exception.dart';
 import '../helpers/firebase_utils.dart';
 
 import '../models/address.dart';
 
 import 'auth.dart';
 
-class UserData with ChangeNotifier {
+class AddressProvider with ChangeNotifier {
   void update(Auth auth) {
     authToken = auth.token;
     userId = auth.userId;
@@ -49,7 +50,7 @@ class UserData with ChangeNotifier {
     return _addresses.firstWhere((address) => address.id == id);
   }
 
-  Future<void> saveAddress(Address address) async {
+  Future<void> addAddress(Address address) async {
     final url = '$usersRef/$userId/addresses.json?auth=$authToken';
     try {
       final response = await http.post(
@@ -78,14 +79,20 @@ class UserData with ChangeNotifier {
     }
   }
 
-  Future<void> fetchUserDetails() async {
-    try {
-      final url = '$usersRef/$userId.json';
-      final response = await http.get(Uri.parse(url));
-      print(response);
-    } catch (error) {
-      print(error);
+  Future<void> deleteAddress(String id) async {
+    final url = '$usersRef/$userId/addresses/$id.json?auth=$authToken';
+    final existingAddressIndex =
+        _addresses.indexWhere((element) => element.id == id);
+    Address? existingAddress = _addresses[existingAddressIndex];
+    _addresses.removeAt(existingAddressIndex);
+    notifyListeners();
+    final response = await http.delete(Uri.parse(url));
+    if (response.statusCode >= 400) {
+      _addresses.insert(existingAddressIndex, existingAddress);
+      notifyListeners();
+      throw HttpException('Could not delete product');
     }
+    existingAddress = null;
   }
 
   Future<void> fetchAddressess() async {

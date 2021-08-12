@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../providers/user_data.dart';
+import '../providers/address_provider.dart';
 import '../providers/map_provider.dart';
 
 import '../helpers/http_exception.dart';
@@ -15,9 +15,9 @@ import '../widgets/icon_card.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/search_button.dart';
 import '../widgets/decorated_wrapper.dart';
-import '../widgets/floating_appbar_wrapper_with_textfield.dart';
-import '../widgets/create_new_address.dart';
+import '../widgets/add_new_address.dart';
 import '../widgets/address_list_by_type.dart';
+import '../widgets/floating_appbar_wrapper_with_textfield.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -36,32 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late GoogleMapController newMapController;
 
   final _currentLocationInputController = TextEditingController();
-
-  static final CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(37.42796133580664, -122.085749655962),
-    zoom: 14.4746,
-  );
-
-  void _openDrawer() {
-    _scaffoldKey.currentState!.openDrawer();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchAddresses();
-  }
-
-  @override
-  void dispose() {
-    _currentLocationInputController.dispose();
-    newMapController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchAddresses() async {
-    await Provider.of<UserData>(context, listen: false).fetchAddressess();
-  }
 
   void _snackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -83,31 +57,34 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller.complete(controller);
     newMapController = controller;
     try {
-      var mapProvider = Provider.of<MapProvider>(context, listen: false);
+      final mapProvider = Provider.of<MapProvider>(context, listen: false);
       await mapProvider.locatePosition(
         newMapController,
         _currentLocationInputController,
       );
-      var currentPosition = mapProvider.currentPosition;
+      final currentPosition = mapProvider.currentPosition;
       Address pickupAddress = Address(
         longitude: currentPosition.longitude,
         latitude: currentPosition.latitude,
         address: _currentLocationInputController.text,
       );
-      Provider.of<UserData>(context, listen: false)
-          .updatePickUpLocationAddress(pickupAddress);
+      Provider.of<AddressProvider>(
+        context,
+        listen: false,
+      ).updatePickUpLocationAddress(pickupAddress);
     } on HttpException catch (error) {
       var errorMessage = 'Request Failed';
-      _snackbar(errorMessage);
       print(error);
+      _snackbar(errorMessage);
     } catch (error) {
       const errorMessage = 'Could not locate you. Please try again later.';
-      _snackbar(errorMessage);
       print(error);
+      _snackbar(errorMessage);
     }
   }
 
   void onLocationInput(String value) async {
+    // TODO Geocoding using Google API
     Provider.of<MapProvider>(context, listen: false).getLatLng(
       value,
       newMapController,
@@ -116,8 +93,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _addAddress(String address, String tag, String name) async {
     try {
-      var pickupLocation =
-          Provider.of<UserData>(context, listen: false).pickupLocation;
+      final addressProvider = Provider.of<AddressProvider>(
+        context,
+        listen: false,
+      );
+      final pickupLocation = addressProvider.pickupLocation;
       if (address == pickupLocation.address) {
         final newAddress = Address(
           address: pickupLocation.address,
@@ -126,58 +106,66 @@ class _HomeScreenState extends State<HomeScreen> {
           tag: tag,
           name: name,
         );
-        await Provider.of<UserData>(context, listen: false)
-            .saveAddress(newAddress);
+        await addressProvider.addAddress(newAddress);
       } else {
+        // TODO Geocoding Logic Attachment
         print('Attach Geocoding Logic Here');
       }
     } on HttpException catch (error) {
       var errorMessage = 'Request Failed';
-      _snackbar(errorMessage);
       print(error);
+      _snackbar(errorMessage);
     } catch (error) {
       const errorMessage = 'Could not save address. Please try again later.';
-      _snackbar(errorMessage);
       print(error);
+      _snackbar(errorMessage);
     }
   }
 
-  void createAddressModalSheet(String label) {
+  String _plugPickupLocationAddressToAddAddress() {
+    final pickupLocation = Provider.of<AddressProvider>(
+      context,
+      listen: false,
+    ).pickupLocation;
+    return pickupLocation.address ?? '';
+  }
+
+  void addAddressModalSheet(String label) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(12),
-        ),
-      ),
-      builder: (_) => CreateNewAddress(
+      shape: modalSheetShape,
+      builder: (_) => AddNewAddress(
         addAddress: _addAddress,
-        getLocationAddress: Provider.of<UserData>(context, listen: false)
-                .pickupLocation
-                .address ??
-            '',
+        getLocationAddress: _plugPickupLocationAddressToAddAddress as String,
         label: label,
       ),
     );
+  }
+
+  void _plugNewAddressToAddressByType(String label) {
+    Navigator.of(context).pop();
+    addAddressModalSheet(label);
+  }
+
+  Future<void> _deleteAddress(String id) async {
+    await Provider.of<AddressProvider>(context).deleteAddress(id);
   }
 
   void showAddressesByType(String label) {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(12),
-        ),
-      ),
+      shape: modalSheetShape,
       builder: (_) => AddressListByType(
         label: label,
-        addAddress: () {
-          Navigator.of(context).pop();
-          createAddressModalSheet(label);
-        },
+        addAddress: () => _plugNewAddressToAddressByType(label),
+        deleteAddress: _deleteAddress,
       ),
     );
   }
+
+  final modalSheetShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+  );
 
   List<Map<String, dynamic>> addressType = [
     {
@@ -193,6 +181,35 @@ class _HomeScreenState extends State<HomeScreen> {
       'label': 'Other',
     },
   ];
+
+  static final CameraPosition _kGooglePlex = CameraPosition(
+    target: LatLng(37.42796133580664, -122.085749655962),
+    zoom: 14.4746,
+  );
+
+  void _openDrawer() {
+    _scaffoldKey.currentState!.openDrawer();
+  }
+
+  Future<void> _fetchAddresses() async {
+    await Provider.of<AddressProvider>(
+      context,
+      listen: false,
+    ).fetchAddressess();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddresses();
+  }
+
+  @override
+  void dispose() {
+    _currentLocationInputController.dispose();
+    newMapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -256,23 +273,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: addressType.map(
                             (card) {
-                              bool check = Provider.of<UserData>(context,
-                                      listen: false)
-                                  .checkIfAddressExistsByType(card['label']);
-                              var icon = card['icon'];
-                              var label = card['label'];
+                              final icon = card['icon'];
+                              final label = card['label'];
+                              bool check = Provider.of<AddressProvider>(
+                                context,
+                                listen: false,
+                              ).checkIfAddressExistsByType(label);
                               return check
                                   ? IconCard(
                                       icon: icon,
                                       label: label,
-                                      onTapHandler: () =>
-                                          showAddressesByType(label),
+                                      onTapHandler: () => showAddressesByType(
+                                        label,
+                                      ),
                                     )
                                   : IconCard(
                                       icon: icon,
                                       label: 'Add $label',
-                                      onTapHandler: () =>
-                                          createAddressModalSheet(label),
+                                      onTapHandler: () => addAddressModalSheet(
+                                        label,
+                                      ),
                                     );
                             },
                           ).toList(),
