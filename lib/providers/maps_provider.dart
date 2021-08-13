@@ -36,6 +36,7 @@ class MapsProvider with ChangeNotifier {
       address = street + ', ' + road + ' ' + locality + ', ' + state;
       return address;
     } catch (error) {
+      print(error);
       throw error;
     }
   }
@@ -103,5 +104,22 @@ class MapsProvider with ChangeNotifier {
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(cameraPosition),
     );
+  }
+
+  Future<void> findPlace(String address) async {
+    try {
+      final apiKey = mapsAPI;
+      final url =
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$address&key=$apiKey&sessiontoken=1234567890';
+      final response = await http.get(Uri.parse(url));
+      final data = json.decode(response.body);
+      print(data);
+      if (data['error_message'] != null) {
+        throw HttpException(data['error_message']);
+      }
+    } catch (error) {
+      print(error);
+      throw error;
+    }
   }
 }
