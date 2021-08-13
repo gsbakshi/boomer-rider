@@ -13,7 +13,11 @@ import '../helpers/http_exception.dart';
 class MapsProvider with ChangeNotifier {
   late Position _currentPosition;
 
+  late String _countryCode;
+
   Position get currentPosition => _currentPosition;
+
+  String get countryCode => _countryCode;
 
   Future<String> _reverseGeocode(Position position) async {
     try {
@@ -32,7 +36,9 @@ class MapsProvider with ChangeNotifier {
       String locality =
           data['results'][0]['address_components'][2]['long_name'];
       String state = data['results'][0]['address_components'][4]['long_name'];
-
+      _countryCode =
+          (data['results'][0]['address_components'][7]['short_name'] as String)
+              .toLowerCase();
       address = street + ', ' + road + ' ' + locality + ', ' + state;
       return address;
     } catch (error) {
@@ -110,7 +116,7 @@ class MapsProvider with ChangeNotifier {
     try {
       final apiKey = mapsAPI;
       final url =
-          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$address&key=$apiKey&sessiontoken=1234567890';
+          'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$address&key=$apiKey&sessiontoken=1234567890&components=country:$_countryCode';
       final response = await http.get(Uri.parse(url));
       final data = json.decode(response.body);
       // print(data);
