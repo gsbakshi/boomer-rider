@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/auth.dart';
+import '../providers/auth.dart';
+import '../providers/user_provider.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final userData = Provider.of<UserProvider>(context, listen: false);
+    final username = userData.name;
     return Drawer(
       child: Container(
         color: Theme.of(context).primaryColorDark,
@@ -29,7 +32,7 @@ class AppDrawer extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Profile Name',
+                          username,
                           style: Theme.of(context).textTheme.headline3,
                         ),
                         SizedBox(height: 2),
