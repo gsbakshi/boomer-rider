@@ -53,6 +53,39 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<bool> _checkDialog() async => await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text('Are you sure?'),
+          content: Text(
+            'Do you want to delete this address?',
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                'No',
+                style: TextStyle(color: Theme.of(context).accentColor),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop(false);
+              },
+            ),
+            TextButton(
+              child: Text(
+                'Yes',
+                style: TextStyle(color: Theme.of(context).accentColor),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop(true);
+              },
+            ),
+          ],
+        ),
+      );
+
   Future<void> onMapCreated(GoogleMapController controller) async {
     _controller.complete(controller);
     newMapController = controller;
@@ -122,22 +155,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _plugPickupLocationAddressToAddAddress() {
-    final pickupLocation = Provider.of<UserProvider>(
-      context,
-      listen: false,
-    ).pickupLocation;
-    return pickupLocation.address ?? '';
-  }
-
   void addAddressModalSheet(String label) {
     showModalBottomSheet(
       context: context,
       shape: modalSheetShape,
       builder: (_) => AddNewAddress(
         addAddress: _addAddress,
-        getLocationAddress: _plugPickupLocationAddressToAddAddress.toString(),
         label: label,
+        getLocationAddress: Provider.of<UserProvider>(
+              context,
+              listen: false,
+            ).pickupLocation.address ??
+            '',
       ),
     );
   }
@@ -148,7 +177,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deleteAddress(String id) async {
-    await Provider.of<UserProvider>(context).deleteAddress(id);
+    try {
+      bool confirm = await _checkDialog();
+      if (confirm) {
+        await Provider.of<UserProvider>(context, listen: false)
+            .deleteAddress(id);
+      } else {
+        return;
+      }
+    } catch (error) {
+      _snackbar(error.toString());
+    }
   }
 
   void showAddressesByType(String label) {
@@ -273,23 +312,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             (card) {
                               final icon = card['icon'];
                               final label = card['label'];
-                              bool check = Provider.of<UserProvider>(context)
-                                  .checkIfAddressExistsByType(label);
-                              return check
-                                  ? IconCard(
-                                      icon: icon,
-                                      label: label,
-                                      onTapHandler: () => showAddressesByType(
-                                        label,
-                                      ),
-                                    )
-                                  : IconCard(
-                                      icon: icon,
-                                      label: 'Add $label',
-                                      onTapHandler: () => addAddressModalSheet(
-                                        label,
-                                      ),
-                                    );
+                              return Consumer<UserProvider>(
+                                builder: (ctx, check, _) => IconCard(
+                                  icon: icon,
+                                  label: check.checkIfAddressExistsByType(label)
+                                      ? label
+                                      : 'Add $label',
+                                  onTapHandler:
+                                      check.checkIfAddressExistsByType(label)
+                                          ? () => showAddressesByType(label)
+                                          : () => addAddressModalSheet(label),
+                                ),
+                              );
                             },
                           ).toList(),
                         ),

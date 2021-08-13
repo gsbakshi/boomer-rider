@@ -39,8 +39,6 @@ class AddressListByType extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<UserProvider>(context, listen: false);
-    final addressList = provider.addressByType(label);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Column(
@@ -68,42 +66,44 @@ class AddressListByType extends StatelessWidget {
           ),
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
-                children: addressList.map(
-                  (address) {
-                    final icon = getIcon();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: ListTile(
-                        tileColor: Theme.of(context).primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+              child: Consumer<UserProvider>(
+                builder: (ctx, data, _) => Column(
+                  children: data.addressByType(label).map(
+                    (address) {
+                      final icon = getIcon();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: ListTile(
+                          tileColor: Theme.of(context).primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onTap: () {
+                            Navigator.of(context).popAndPushNamed(
+                              SearchScreen.routeName,
+                              arguments: address.id,
+                            );
+                          },
+                          isThreeLine: true,
+                          leading: Icon(icon, color: color),
+                          title: Text(
+                            address.name!,
+                            style: TextStyle(color: color),
+                          ),
+                          subtitle: Text(
+                            address.address!,
+                            style: TextStyle(color: color),
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete),
+                            color: color,
+                            onPressed: () => deleteAddress(address.id!),
+                          ),
                         ),
-                        onTap: () {
-                          Navigator.of(context).popAndPushNamed(
-                            SearchScreen.routeName,
-                            arguments: address.id,
-                          );
-                        },
-                        isThreeLine: true,
-                        leading: Icon(icon, color: color),
-                        title: Text(
-                          address.name!,
-                          style: TextStyle(color: color),
-                        ),
-                        subtitle: Text(
-                          address.address!,
-                          style: TextStyle(color: color),
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete),
-                          color: color,
-                          onPressed: () => deleteAddress(address.id!),
-                        ),
-                      ),
-                    );
-                  },
-                ).toList(),
+                      );
+                    },
+                  ).toList(),
+                ),
               ),
             ),
           ),

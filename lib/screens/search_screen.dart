@@ -92,23 +92,24 @@ class _SearchScreenState extends State<SearchScreen> {
           //     ],
           //   ),
           // ),
-          SearchField(
-            icon: Icons.location_pin,
-            textField: TextField(
-              controller: _dropOffController,
-              textInputAction: TextInputAction.send,
-              decoration: InputDecoration(
-                hintText: 'Where to?',
-                hintStyle: TextStyle(
-                  color: Color(0xffB8AAA3),
+          Consumer<MapsProvider>(
+            builder: (ctx, places, _) => SearchField(
+              icon: Icons.location_pin,
+              textField: TextField(
+                controller: _dropOffController,
+                textInputAction: TextInputAction.send,
+                decoration: InputDecoration(
+                  hintText: 'Where to?',
+                  hintStyle: TextStyle(
+                    color: Color(0xffB8AAA3),
+                  ),
+                  border: InputBorder.none,
                 ),
-                border: InputBorder.none,
+                onChanged: (value) {
+                  places.findPlace(value);
+                },
+                onSubmitted: (value) {},
               ),
-              onChanged: (value) {
-                Provider.of<MapsProvider>(context, listen: false)
-                    .findPlace(value);
-              },
-              onSubmitted: (value) {},
             ),
           ),
           Container(
