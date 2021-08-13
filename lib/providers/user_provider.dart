@@ -47,7 +47,7 @@ class UserProvider with ChangeNotifier {
       _name = data['name'];
       _email = data['email'];
       _mobile = data['mobile'];
-      var addressesData = data['addresses'];
+      final addressesData = data['addresses'];
       final List<Address> loadedAddresses = [];
       addressesData.forEach((addressId, addressData) {
         loadedAddresses.insert(
@@ -68,7 +68,6 @@ class UserProvider with ChangeNotifier {
       print(error);
     }
   }
-
 
   void updatePickUpLocationAddress(Address pickupAddress) {
     pickupLocation = pickupAddress;
