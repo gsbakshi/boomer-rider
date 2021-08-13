@@ -113,7 +113,7 @@ class MapsProvider with ChangeNotifier {
           'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$address&key=$apiKey&sessiontoken=1234567890';
       final response = await http.get(Uri.parse(url));
       final data = json.decode(response.body);
-      print(data);
+      // print(data);
       if (data['error_message'] != null) {
         throw HttpException(data['error_message']);
       }

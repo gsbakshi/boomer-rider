@@ -1,8 +1,9 @@
-import 'package:boomer_rider/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/address_provider.dart';
+import '../providers/user_provider.dart';
+
+import '../screens/search_screen.dart';
 
 import 'custom_button.dart';
 
@@ -38,7 +39,7 @@ class AddressListByType extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<AddressProvider>(context, listen: false);
+    final provider = Provider.of<UserProvider>(context, listen: false);
     final addressList = provider.addressByType(label);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),

@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'providers/auth.dart';
 import 'providers/user_provider.dart';
 import 'providers/maps_provider.dart';
-import 'providers/address_provider.dart';
 
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
@@ -30,10 +29,6 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider.value(
           value: MapsProvider(),
-        ),
-        ChangeNotifierProxyProvider<Auth, AddressProvider>(
-          create: (_) => AddressProvider(),
-          update: (_, auth, addressData) => addressData!..update(auth),
         ),
         ChangeNotifierProxyProvider<Auth, UserProvider>(
           create: (_) => UserProvider(),

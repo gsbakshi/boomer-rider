@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/address_provider.dart';
+import '../providers/maps_provider.dart';
+import '../providers/user_provider.dart';
 
 import '../widgets/search_field.dart';
 
@@ -38,7 +39,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void didChangeDependencies() {
     if (_isInit) {
-      final addressProvider = Provider.of<AddressProvider>(
+      final addressProvider = Provider.of<UserProvider>(
         context,
         listen: false,
       );
@@ -103,6 +104,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 border: InputBorder.none,
               ),
+              onChanged: (value) {
+                Provider.of<MapsProvider>(context, listen: false)
+                    .findPlace(value);
+              },
               onSubmitted: (value) {},
             ),
           ),

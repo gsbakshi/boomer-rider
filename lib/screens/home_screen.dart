@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../providers/address_provider.dart';
+import '../providers/user_provider.dart';
 import '../providers/maps_provider.dart';
 
 import '../helpers/http_exception.dart';
@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
         latitude: currentPosition.latitude,
         address: _currentLocationInputController.text,
       );
-      Provider.of<AddressProvider>(
+      Provider.of<UserProvider>(
         context,
         listen: false,
       ).updatePickUpLocationAddress(pickupAddress);
@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _addAddress(String address, String tag, String name) async {
     try {
-      final addressProvider = Provider.of<AddressProvider>(
+      final addressProvider = Provider.of<UserProvider>(
         context,
         listen: false,
       );
@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _plugPickupLocationAddressToAddAddress() {
-    final pickupLocation = Provider.of<AddressProvider>(
+    final pickupLocation = Provider.of<UserProvider>(
       context,
       listen: false,
     ).pickupLocation;
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
       shape: modalSheetShape,
       builder: (_) => AddNewAddress(
         addAddress: _addAddress,
-        getLocationAddress: _plugPickupLocationAddressToAddAddress as String,
+        getLocationAddress: _plugPickupLocationAddressToAddAddress.toString(),
         label: label,
       ),
     );
@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deleteAddress(String id) async {
-    await Provider.of<AddressProvider>(context).deleteAddress(id);
+    await Provider.of<UserProvider>(context).deleteAddress(id);
   }
 
   void showAddressesByType(String label) {
@@ -191,17 +191,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _scaffoldKey.currentState!.openDrawer();
   }
 
-  Future<void> _fetchAddresses() async {
-    await Provider.of<AddressProvider>(
-      context,
-      listen: false,
-    ).fetchAddressess();
-  }
-
   @override
   void initState() {
     super.initState();
-    _fetchAddresses();
+    Future.delayed(Duration.zero).then(
+      (_) => Provider.of<UserProvider>(
+        context,
+        listen: false,
+      ).fetchUserDetails(),
+    );
   }
 
   @override
@@ -275,10 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             (card) {
                               final icon = card['icon'];
                               final label = card['label'];
-                              bool check = Provider.of<AddressProvider>(
-                                context,
-                                listen: false,
-                              ).checkIfAddressExistsByType(label);
+                              bool check = Provider.of<UserProvider>(context)
+                                  .checkIfAddressExistsByType(label);
                               return check
                                   ? IconCard(
                                       icon: icon,
