@@ -25,6 +25,7 @@ class UserProvider with ChangeNotifier {
   late String _mobile;
 
   late Address pickupLocation;
+  late Address dropOffLocation;
 
   List<Address> _addresses = [];
 
@@ -71,6 +72,13 @@ class UserProvider with ChangeNotifier {
 
   void updatePickUpLocationAddress(Address pickupAddress) {
     pickupLocation = pickupAddress;
+    notifyListeners();
+  }
+
+  void updateDropOffLocationAddress(Address dropOffAddress) {
+    dropOffLocation = dropOffAddress;
+    //TODO    DROPOFF CHECK
+    print(dropOffLocation);
     notifyListeners();
   }
 
@@ -135,5 +143,4 @@ class UserProvider with ChangeNotifier {
     }
     existingAddress = null;
   }
-
 }

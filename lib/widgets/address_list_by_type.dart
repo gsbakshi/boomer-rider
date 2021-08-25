@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
 
-import '../screens/search_screen.dart';
+// import '../screens/search_screen.dart';
 
 import 'custom_button.dart';
 
@@ -79,16 +79,24 @@ class AddressListByType extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           onTap: () {
-                            Navigator.of(context).popAndPushNamed(
-                              SearchScreen.routeName,
-                              arguments: address.id,
-                            );
+                            // Navigator.of(context).popAndPushNamed(
+                            //   SearchScreen.routeName,
+                            //   arguments: address.id,
+                            // );
+                            Provider.of<UserProvider>(
+                              context,
+                              listen: false,
+                            ).updateDropOffLocationAddress(address);
+                            Navigator.of(context).pop();
                           },
                           isThreeLine: true,
                           leading: Icon(icon, color: color),
                           title: Text(
                             address.name!,
-                            style: TextStyle(color: color),
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           subtitle: Text(
                             address.address!,

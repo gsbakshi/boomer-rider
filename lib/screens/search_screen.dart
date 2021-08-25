@@ -1,10 +1,17 @@
+import 'package:boomer_rider/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/maps_provider.dart';
 import '../providers/user_provider.dart';
 
+import '../helpers/http_exception.dart';
+
+import '../models/address.dart';
+import '../models/predicted_places.dart';
+
 import '../widgets/search_field.dart';
+import '../widgets/predicted_tile.dart';
 
 class SearchScreen extends StatefulWidget {
   SearchScreen({Key? key}) : super(key: key);
@@ -23,6 +30,34 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isInit = true;
 
   late final dropOffLocation;
+
+  late Address _dropOffAddress;
+
+  List<PredictedPlaces> predictedList = [];
+
+  void _snackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(
+            color: Theme.of(context).primaryColorDark,
+          ),
+        ),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(10.0, 5.0, 10.0, 10.0),
+        backgroundColor: Theme.of(context).accentColor,
+      ),
+    );
+  }
+
+  void _updateDropOff() {
+    Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).updateDropOffLocationAddress(_dropOffAddress);
+    Navigator.of(context).pop();
+  }
 
   @override
   void initState() {
@@ -44,11 +79,6 @@ class _SearchScreenState extends State<SearchScreen> {
         listen: false,
       );
       _pickUpController.text = addressProvider.pickupLocation.address ?? '';
-      final addressId = ModalRoute.of(context)!.settings.arguments as String?;
-      if (addressId != null) {
-        dropOffLocation = addressProvider.findAddressById(addressId);
-        _dropOffController.text = dropOffLocation.address;
-      }
     }
     _isInit = false;
     super.didChangeDependencies();
@@ -63,69 +93,133 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColorDark,
       ),
-      body: Column(
-        children: [
-          SearchField(
-            icon: Icons.my_location,
-            textField: TextField(
-              controller: _pickUpController,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                hintText: 'Pick up location',
-                hintStyle: TextStyle(
-                  color: Color(0xffB8AAA3),
-                ),
-                border: InputBorder.none,
-              ),
-              onSubmitted: (value) {},
-            ),
-          ),
-          // Container(
-          //   color: Theme.of(context).primaryColorDark,
-          //   child: Row(
-          //     children: [
-          //       Expanded(child: Container()),
-          //       Padding(
-          //         padding: const EdgeInsets.only(right: 16.0),
-          //         child: Icon(Icons.swap_vert),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-          Consumer<MapsProvider>(
-            builder: (ctx, places, _) => SearchField(
-              icon: Icons.location_pin,
-              textField: TextField(
-                controller: _dropOffController,
-                textInputAction: TextInputAction.send,
-                decoration: InputDecoration(
-                  hintText: 'Where to?',
-                  hintStyle: TextStyle(
-                    color: Color(0xffB8AAA3),
+      bottomSheet: _dropOffController.text.isEmpty
+          ? null
+          : Container(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColorDark,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black38,
+                    blurRadius: 4,
+                    spreadRadius: 0.5,
+                    offset: Offset(0, -4),
                   ),
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) {
-                  places.findPlace(value);
-                },
-                onSubmitted: (value) {},
-              ),
-            ),
-          ),
-          Container(
-            color: Theme.of(context).primaryColorDark,
-            height: 20,
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  SizedBox(height: 70),
                 ],
               ),
+              child: CustomButton(
+                label: 'Continue',
+                onTap: _updateDropOff,
+              ),
             ),
-          ),
-        ],
+      body: Consumer<MapsProvider>(
+        builder: (ctx, places, _) {
+          return Column(
+            children: [
+              SearchField(
+                icon: Icons.my_location,
+                textField: TextField(
+                  controller: _pickUpController,
+                  textInputAction: TextInputAction.next,
+                  decoration: InputDecoration(
+                    hintText: 'Pick up location',
+                    hintStyle: TextStyle(
+                      color: Color(0xffB8AAA3),
+                    ),
+                    border: InputBorder.none,
+                  ),
+                  onSubmitted: (value) {},
+                ),
+              ),
+              SearchField(
+                icon: Icons.location_pin,
+                textField: TextField(
+                  controller: _dropOffController,
+                  textInputAction: TextInputAction.send,
+                  decoration: InputDecoration(
+                    hintText: 'Where to?',
+                    hintStyle: TextStyle(
+                      color: Color(0xffB8AAA3),
+                    ),
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (value) async {
+                    try {
+                      if (value.length == 0) {
+                        setState(() {
+                          predictedList = [];
+                        });
+                        return;
+                      }
+                      if (value.isEmpty) {
+                        return;
+                      }
+                      await places.findPlace(value);
+                      predictedList = places.predictedList;
+                    } on HttpException catch (error) {
+                      var errorMessage = 'Request Failed';
+                      print(error);
+                      _snackbar(errorMessage + ' : ' + error.toString());
+                    } catch (error) {
+                      const errorMessage =
+                          'Could not autocomplete search request. Please try again later.';
+                      print(error);
+                      _snackbar(errorMessage);
+                    }
+                  },
+                ),
+              ),
+              Container(
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColorDark,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black38,
+                      blurRadius: 2,
+                      spreadRadius: 0.5,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  itemCount: predictedList.length,
+                  itemBuilder: (ctx, i) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: PredictedTile(
+                      predictedList[i],
+                      onTap: () async {
+                        try {
+                          await places
+                              .getPlaceDetails(predictedList[i].placeId!);
+                          _dropOffAddress = places.dropoffLocation;
+                          setState(() {
+                            _dropOffController.text =
+                                _dropOffAddress.address ?? '';
+                          });
+                        } on HttpException catch (error) {
+                          var errorMessage = 'Request Failed';
+                          print(error);
+                          _snackbar(errorMessage);
+                        } catch (error) {
+                          const errorMessage =
+                              'Could not locate you. Please try again later.';
+                          print(error);
+                          _snackbar(errorMessage);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
