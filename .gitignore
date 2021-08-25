@@ -9,6 +9,7 @@
 .history
 .svn/
 .store
+sample_json.txt
 
 # IntelliJ related
 *.iml
