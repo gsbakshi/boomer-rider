@@ -117,11 +117,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void onLocationInput(String value) async {
-    // TODO Geocoding using Google API
-    Provider.of<MapsProvider>(context, listen: false).getLatLng(
-      value,
-      newMapController,
-    );
+    try {
+      final mapProvider = Provider.of<MapsProvider>(context, listen: false);
+      await mapProvider.getLatLng(value, newMapController);
+      final geocodedAddress = mapProvider.geocodedAddress;
+      Provider.of<UserProvider>(
+        context,
+        listen: false,
+      ).updateDropOffLocationAddress(geocodedAddress);
+    } on HttpException catch (error) {
+      var errorMessage = 'Request Failed';
+      print(error);
+      _snackbar(errorMessage);
+    } catch (error) {
+      const errorMessage = 'Could not locate address. Please try again later.';
+      print(error);
+      _snackbar(errorMessage);
+    }
   }
 
   Future<void> _addAddress(String address, String tag, String name) async {
@@ -141,8 +153,18 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         await addressProvider.addAddress(newAddress);
       } else {
-        // TODO Geocoding Logic Attachment
-        print('Attach Geocoding Logic Here');
+        final mapProvider = Provider.of<MapsProvider>(context, listen: false);
+        await mapProvider.geocode(address);
+        final geocodedAddress = mapProvider.geocodedAddress;
+        final newAddress = Address(
+          id: geocodedAddress.id,
+          address: geocodedAddress.name,
+          name: name,
+          latitude: geocodedAddress.latitude,
+          longitude: geocodedAddress.longitude,
+          tag: tag,
+        );
+        addressProvider.addAddress(newAddress);
       }
     } on HttpException catch (error) {
       var errorMessage = 'Request Failed';
