@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'providers/auth.dart';
+import 'providers/ride_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/maps_provider.dart';
 
@@ -33,6 +34,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<Auth, UserProvider>(
           create: (_) => UserProvider(),
           update: (_, auth, userData) => userData!..update(auth),
+        ),
+        ChangeNotifierProxyProvider2<Auth, UserProvider, RideProvider>(
+          create: (_) => RideProvider(),
+          update: (_, auth, userData, rideData) => rideData!..update(auth, userData),
         ),
       ],
       child: Consumer<Auth>(
