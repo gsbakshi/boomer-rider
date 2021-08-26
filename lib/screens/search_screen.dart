@@ -1,4 +1,3 @@
-import 'package:boomer_rider/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +10,7 @@ import '../models/address.dart';
 import '../models/predicted_places.dart';
 
 import '../widgets/search_field.dart';
+import '../widgets/custom_button.dart';
 import '../widgets/predicted_tile.dart';
 
 class SearchScreen extends StatefulWidget {

@@ -1,15 +1,16 @@
 import 'dart:convert';
 
-import 'package:boomer_rider/models/address.dart';
-import 'package:boomer_rider/models/user.dart';
-import 'package:boomer_rider/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../helpers/http_exception.dart';
 import '../helpers/firebase_utils.dart';
 
+import '../models/user.dart';
+import '../models/address.dart';
+
 import 'auth.dart';
+import 'user_provider.dart';
 
 class RideProvider with ChangeNotifier {
   void update(Auth auth, UserProvider userData) {
