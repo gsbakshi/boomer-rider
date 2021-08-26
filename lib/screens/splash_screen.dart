@@ -21,7 +21,11 @@ class SplashScreen extends StatelessWidget {
               child: Container(
                 height: query.height * 0.2,
                 width: query.width,
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Theme.of(context).accentColor,
+                  ),
+                ),
               ),
             )
           ],
