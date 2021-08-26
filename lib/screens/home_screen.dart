@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Set<Circle> circles = {};
 
   bool _loading = false;
-  int _state = 1;
+  int _state = 2;
 
   void _snackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -281,6 +281,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+Future<void> obtainDirection(dynamic value) async {
+    if (value == 'obtainDirection') {
+      setState(() {
+        _loading = true;
+      });
+      await getPlaceDirections();
+      setState(() {
+        _loading = false;
+        _state = 2;
+      });
+    }
+  }
+
   Future<void> _addAddress(String address, String tag, String name) async {
     try {
       final addressProvider = Provider.of<UserProvider>(
@@ -354,19 +367,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     } catch (error) {
       _snackbar(error.toString());
-    }
-  }
-
-  Future<void> obtainDirection(dynamic value) async {
-    if (value == 'obtainDirection') {
-      setState(() {
-        _loading = true;
-      });
-      await getPlaceDirections();
-      setState(() {
-        _loading = false;
-        _state = 2;
-      });
     }
   }
 
