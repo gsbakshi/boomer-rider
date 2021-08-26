@@ -55,6 +55,7 @@ class UserProvider with ChangeNotifier {
       _mobile = data['mobile'];
       final addressesData = data['addresses'];
       final List<Address> loadedAddresses = [];
+      if (addressesData != null) {
       addressesData.forEach((addressId, addressData) {
         loadedAddresses.insert(
           0,
@@ -68,6 +69,7 @@ class UserProvider with ChangeNotifier {
           ),
         );
       });
+      }
       _addresses = loadedAddresses;
       _user = User(
         id: userId,
