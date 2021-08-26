@@ -16,8 +16,9 @@ import '../models/address.dart';
 import '../widgets/icon_card.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/search_button.dart';
-import '../widgets/decorated_wrapper.dart';
+import '../widgets/custom_button.dart';
 import '../widgets/add_new_address.dart';
+import '../widgets/decorated_wrapper.dart';
 import '../widgets/address_list_by_type.dart';
 import '../widgets/floating_appbar_wrapper_with_textfield.dart';
 
@@ -32,7 +33,7 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Completer<GoogleMapController> _controller = Completer();
@@ -46,6 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Set<Marker> markers = {};
   Set<Circle> circles = {};
+
+  bool _loading = false;
+  int _state = 1;
 
   void _snackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -353,6 +357,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> obtainDirection(dynamic value) async {
+    if (value == 'obtainDirection') {
+      setState(() {
+        _loading = true;
+      });
+      await getPlaceDirections();
+      setState(() {
+        _loading = false;
+        _state = 2;
+      });
+    }
+  }
+
   void showAddressesByType(String label) async {
     final res = await showModalBottomSheet(
       context: context,
@@ -363,9 +380,17 @@ class _HomeScreenState extends State<HomeScreen> {
         deleteAddress: _deleteAddress,
       ),
     );
-    if (res == 'obtainDirection') {
-      await getPlaceDirections();
+    await obtainDirection(res);
+  }
+
+  double mapBottomPadding(double queryHeight) {
+    double bottomPad = 70;
+    if (_state == 1) {
+      bottomPad = queryHeight * 0.3;
+    } else if (_state == 2) {
+      bottomPad = queryHeight * 0.4;
     }
+    return bottomPad;
   }
 
   final modalSheetShape = RoundedRectangleBorder(
@@ -417,6 +442,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     var query = MediaQuery.of(context).size;
+    double selectDropOffContainerHeight = query.height * 0.29;
+    double selectRideContainerHeight = query.height * 0.36;
     return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(),
@@ -425,7 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
           GoogleMap(
             myLocationEnabled: true,
             padding: EdgeInsets.only(
-              bottom: query.height * 0.3,
+              bottom: mapBottomPadding(query.height),
               right: 16,
             ),
             polylines: polylineSet,
@@ -449,70 +476,161 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             bottom: 0,
             child: SafeArea(
-              child: Container(
-                height: query.height * 0.29,
-                width: query.width,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: DecoratedWrapper(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 18,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 10),
-                        Text(
-                          'Hi There',
-                          style: Theme.of(context).textTheme.headline1,
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Where to?',
-                          style: Theme.of(context).textTheme.headline4,
-                        ),
-                        SizedBox(height: 16),
-                        GestureDetector(
-                          onTap: () async {
-                            final res = await Navigator.of(context).pushNamed(
-                              SearchScreen.routeName,
-                            );
-                            if (res == 'obtainDirection') {
-                              await getPlaceDirections();
-                            }
-                          },
-                          child: SearchButton(),
-                        ),
-                        SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: addressType.map(
-                            (card) {
-                              final icon = card['icon'];
-                              final label = card['label'];
-                              return Consumer<UserProvider>(
-                                builder: (ctx, check, _) => IconCard(
-                                  icon: icon,
-                                  label: check.checkIfAddressExistsByType(label)
-                                      ? label
-                                      : 'Add $label',
-                                  onTapHandler:
-                                      check.checkIfAddressExistsByType(label)
-                                          ? () => showAddressesByType(label)
-                                          : () => addAddressModalSheet(label),
-                                ),
+              child: AnimatedSize(
+                duration: Duration(milliseconds: 360),
+                vsync: this,
+                curve: Curves.easeOut,
+                child: Container(
+                  height: _state == 1 ? selectDropOffContainerHeight : 0,
+                  width: query.width,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DecoratedWrapper(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 10),
+                          Text(
+                            'Hi There',
+                            style: Theme.of(context).textTheme.headline1,
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Where to?',
+                            style: Theme.of(context).textTheme.headline4,
+                          ),
+                          SizedBox(height: 16),
+                          GestureDetector(
+                            onTap: () async {
+                              final res = await Navigator.of(context).pushNamed(
+                                SearchScreen.routeName,
                               );
+                              await obtainDirection(res);
                             },
-                          ).toList(),
-                        ),
-                      ],
+                            child: SearchButton(),
+                          ),
+                          SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: addressType.map(
+                              (card) {
+                                final icon = card['icon'];
+                                final label = card['label'];
+                                return Consumer<UserProvider>(
+                                  builder: (ctx, check, _) => IconCard(
+                                    icon: icon,
+                                    label:
+                                        check.checkIfAddressExistsByType(label)
+                                            ? label
+                                            : 'Add $label',
+                                    onTapHandler:
+                                        check.checkIfAddressExistsByType(label)
+                                            ? () => showAddressesByType(label)
+                                            : () => addAddressModalSheet(label),
+                                  ),
+                                );
+                              },
+                            ).toList(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
+          Positioned(
+            bottom: 0,
+            child: SafeArea(
+              child: AnimatedSize(
+                duration: Duration(milliseconds: 240),
+                vsync: this,
+                curve: Curves.bounceInOut,
+                child: Container(
+                  height: _state == 2 ? selectRideContainerHeight : 0,
+                  width: query.width,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DecoratedWrapper(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 10),
+                          Text(
+                            'Select Ride',
+                            style: Theme.of(context).textTheme.headline4,
+                          ),
+                          SizedBox(height: 16),
+                          ListTile(
+                            leading: Image.asset(
+                              'assets/images/taxi.png',
+                            ),
+                            title: Text(
+                              'Car',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '10km',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          ListTile(
+                            leading: Icon(
+                              Icons.money,
+                              color: Color(0xffB8AAA3),
+                            ),
+                            trailing: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Color(0xffB8AAA3),
+                            ),
+                            title: Text(
+                              'Cash',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          CustomButton(
+                            label: 'Request Ride',
+                            onTap: () {
+                              print('Requested Ride');
+                            },
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_loading)
+            Container(
+              height: query.height,
+              width: query.width,
+              color: Colors.black26,
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: Theme.of(context).accentColor,
+                ),
+              ),
+            ),
         ],
       ),
     );
