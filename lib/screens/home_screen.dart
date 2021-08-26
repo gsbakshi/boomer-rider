@@ -2,16 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
+import '../providers/ride_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/maps_provider.dart';
 
+import '../helpers/pricing_helper.dart';
 import '../helpers/http_exception.dart';
 import '../helpers/direction_helper.dart';
 
 import '../models/address.dart';
+import '../models/direction_details.dart';
 
 import '../widgets/icon_card.dart';
 import '../widgets/app_drawer.dart';
@@ -42,6 +46,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   final _currentLocationInputController = TextEditingController();
 
+  DirectionDetails tripDetails = DirectionDetails();
+
   List<LatLng> plineCoordinates = [];
   Set<Polyline> polylineSet = {};
 
@@ -49,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Set<Circle> circles = {};
 
   bool _loading = false;
-  int _state = 2;
+  int _state = 1;
 
   void _snackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -100,9 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
 
-  Future<void> onMapCreated(GoogleMapController controller) async {
-    _controller.complete(controller);
-    newMapController = controller;
+  Future<void> locateOnMap() async {
     try {
       final mapProvider = Provider.of<MapsProvider>(context, listen: false);
       await mapProvider.locatePosition(
@@ -130,6 +134,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> onMapCreated(GoogleMapController controller) async {
+    _controller.complete(controller);
+    newMapController = controller;
+    await locateOnMap();
+  }
+
   void onLocationInput(String value) async {
     try {
       final mapProvider = Provider.of<MapsProvider>(context, listen: false);
@@ -153,8 +163,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> getPlaceDirections() async {
     try {
       final user = Provider.of<UserProvider>(context, listen: false);
-      final initialPosition = user.pickupLocation;
-      final finalPosition = user.dropOffLocation;
+      final initialPosition = user.pickupLocation!;
+      final finalPosition = user.dropOffLocation!;
+
       final pickupLatLng = LatLng(
         initialPosition.latitude!,
         initialPosition.longitude!,
@@ -163,35 +174,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         finalPosition.latitude!,
         finalPosition.longitude!,
       );
+
       final details = await DirectionHelper.obtainPlaceDirectionDetails(
         pickupLatLng,
         dropoffLatLng,
       );
+
       final polylinePoints = PolylinePoints();
       List<PointLatLng> decodedPolylinePointsResult =
           polylinePoints.decodePolyline(details.encodedPoints!);
+
       plineCoordinates.clear();
       if (decodedPolylinePointsResult.isNotEmpty) {
         decodedPolylinePointsResult.forEach((PointLatLng point) {
           plineCoordinates.add(LatLng(point.latitude, point.longitude));
         });
       }
-
-      polylineSet.clear();
-
-      setState(() {
-        final polyline = Polyline(
-          color: Theme.of(context).accentColor,
-          polylineId: PolylineId('Place Directions'),
-          jointType: JointType.round,
-          points: plineCoordinates,
-          width: 5,
-          startCap: Cap.roundCap,
-          endCap: Cap.roundCap,
-          geodesic: true,
-        );
-        polylineSet.add(polyline);
-      });
 
       late LatLngBounds screenBounds;
       if (pickupLatLng.latitude > dropoffLatLng.latitude &&
@@ -220,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       newMapController.animateCamera(
         CameraUpdate.newLatLngBounds(
           screenBounds,
-          70,
+          120,
         ),
       );
 
@@ -244,11 +242,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         markerId: MarkerId('Drop Off'),
       );
 
-      setState(() {
-        markers.add(pickupMarker);
-        markers.add(dropoffMarker);
-      });
-
       Circle pickupCircle = Circle(
         fillColor: Colors.cyan,
         center: pickupLatLng,
@@ -266,7 +259,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         circleId: CircleId('Drop Off circle'),
       );
 
+      polylineSet.clear();
       setState(() {
+        tripDetails = details;
+        final polyline = Polyline(
+          color: Theme.of(context).accentColor,
+          polylineId: PolylineId('Place Directions'),
+          jointType: JointType.round,
+          points: plineCoordinates,
+          width: 5,
+          startCap: Cap.roundCap,
+          endCap: Cap.roundCap,
+          geodesic: true,
+        );
+        polylineSet.add(polyline);
+        markers.add(pickupMarker);
+        markers.add(dropoffMarker);
         circles.add(pickupCircle);
         circles.add(dropoffCircle);
       });
@@ -281,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-Future<void> obtainDirection(dynamic value) async {
+  Future<void> obtainDirection(dynamic value) async {
     if (value == 'obtainDirection') {
       setState(() {
         _loading = true;
@@ -294,6 +302,49 @@ Future<void> obtainDirection(dynamic value) async {
     }
   }
 
+  Future<void> _resetApp() async {
+    setState(() {
+      _loading = true;
+    });
+    if (_state == 3) {
+      try {
+        await Provider.of<RideProvider>(
+          context,
+          listen: false,
+        ).cancelRideRequest();
+      } on HttpException catch (error) {
+        var errorMessage = 'Request Failed';
+        print(error);
+        _snackbar(errorMessage);
+      } catch (error) {
+        const errorMessage = 'Could not cancel request.';
+        print(error);
+        _snackbar(errorMessage);
+      }
+    }
+    Provider.of<UserProvider>(context, listen: false).clearLocation();
+    setState(() {
+      polylineSet.clear();
+      markers.clear();
+      circles.clear();
+      plineCoordinates.clear();
+      _currentLocationInputController.clear();
+      newMapController.dispose();
+      _state = 1;
+    });
+    await locateOnMap();
+    setState(() {
+      _loading = false;
+    });
+  }
+
+  Future<void> _requestRide() async {
+    setState(() {
+      _state = 3;
+    });
+    await Provider.of<RideProvider>(context, listen: false).saveRideRequest();
+  }
+
   Future<void> _addAddress(String address, String tag, String name) async {
     try {
       final addressProvider = Provider.of<UserProvider>(
@@ -301,7 +352,7 @@ Future<void> obtainDirection(dynamic value) async {
         listen: false,
       );
       final pickupLocation = addressProvider.pickupLocation;
-      if (address == pickupLocation.address) {
+      if (address == pickupLocation!.address) {
         final newAddress = Address(
           address: pickupLocation.address,
           latitude: pickupLocation.latitude,
@@ -345,7 +396,7 @@ Future<void> obtainDirection(dynamic value) async {
         getLocationAddress: Provider.of<UserProvider>(
               context,
               listen: false,
-            ).pickupLocation.address ??
+            ).pickupLocation!.address ??
             '',
       ),
     );
@@ -388,7 +439,9 @@ Future<void> obtainDirection(dynamic value) async {
     if (_state == 1) {
       bottomPad = queryHeight * 0.3;
     } else if (_state == 2) {
-      bottomPad = queryHeight * 0.4;
+      bottomPad = queryHeight * 0.42;
+    } else if (_state == 3) {
+      bottomPad = queryHeight * 0.3;
     }
     return bottomPad;
   }
@@ -443,10 +496,20 @@ Future<void> obtainDirection(dynamic value) async {
   Widget build(BuildContext context) {
     var query = MediaQuery.of(context).size;
     double selectDropOffContainerHeight = query.height * 0.29;
-    double selectRideContainerHeight = query.height * 0.36;
+    double selectRideContainerHeight = query.height * 0.41;
+    double requestingDriverContainerHeight = query.height * 0.29;
     return Scaffold(
       key: _scaffoldKey,
       drawer: AppDrawer(),
+      floatingActionButtonLocation:
+          _state == 1 ? null : FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: _state == 1
+          ? null
+          : FloatingActionButton(
+              onPressed: _resetApp,
+              backgroundColor: Theme.of(context).primaryColorLight,
+              child: Icon(Icons.close),
+            ),
       body: Stack(
         children: [
           GoogleMap(
@@ -570,49 +633,111 @@ Future<void> obtainDirection(dynamic value) async {
                             style: Theme.of(context).textTheme.headline4,
                           ),
                           SizedBox(height: 16),
-                          ListTile(
-                            leading: Image.asset(
-                              'assets/images/taxi.png',
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .primaryColorDark
+                                  .withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            title: Text(
-                              'Car',
-                              style: TextStyle(
-                                color: Color(0xffB8AAA3),
-                                fontWeight: FontWeight.w600,
+                            child: ListTile(
+                              leading: Image.asset(
+                                'assets/images/taxi.png',
                               ),
-                            ),
-                            subtitle: Text(
-                              '10km',
-                              style: TextStyle(
-                                color: Color(0xffB8AAA3),
+                              title: Text(
+                                'Car',
+                                style: TextStyle(
+                                  color: Color(0xffB8AAA3),
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          ListTile(
-                            leading: Icon(
-                              Icons.money,
-                              color: Color(0xffB8AAA3),
-                            ),
-                            trailing: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Color(0xffB8AAA3),
-                            ),
-                            title: Text(
-                              'Cash',
-                              style: TextStyle(
-                                color: Color(0xffB8AAA3),
-                                fontWeight: FontWeight.w600,
+                              subtitle: Text(
+                                tripDetails.distanceText ?? '-- km',
+                                style: TextStyle(
+                                  color: Color(0xffB8AAA3),
+                                ),
+                              ),
+                              trailing: Text(
+                                '\$${PricingHelper.calculateFares(tripDetails.durationValue ?? 0, tripDetails.distanceValue ?? 0).toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: Color(0xffB8AAA3),
+                                ),
                               ),
                             ),
                           ),
+                          SizedBox(height: 20),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .primaryColorDark
+                                  .withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ListTile(
+                              onTap: () {
+                                print('Change Payment Method');
+                              },
+                              leading: Icon(
+                                Icons.money,
+                                color: Color(0xffB8AAA3),
+                              ),
+                              trailing: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: Color(0xffB8AAA3),
+                              ),
+                              title: Text(
+                                'Cash',
+                                style: TextStyle(
+                                  color: Color(0xffB8AAA3),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20),
                           CustomButton(
                             label: 'Request Ride',
-                            onTap: () {
-                              print('Requested Ride');
-                            },
-                          )
+                            onTap: _requestRide,
+                          ),
                         ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            child: SafeArea(
+              child: AnimatedSize(
+                duration: Duration(milliseconds: 240),
+                vsync: this,
+                curve: Curves.bounceInOut,
+                child: Container(
+                  height: _state == 3 ? requestingDriverContainerHeight : 0,
+                  width: query.width,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: DecoratedWrapper(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
+                      ),
+                      child: Center(
+                        child: DefaultTextStyle(
+                          style: Theme.of(context)
+                              .textTheme
+                              .headline4!
+                              .copyWith(fontSize: 27),
+                          child: AnimatedTextKit(
+                            animatedTexts: [
+                              RotateAnimatedText('Requesting a ride'),
+                              RotateAnimatedText('Please wait'),
+                              RotateAnimatedText('Finding a Driver'),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
