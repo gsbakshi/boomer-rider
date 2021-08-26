@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
 
-// import '../screens/search_screen.dart';
-
 import 'custom_button.dart';
 
 class AddressListByType extends StatelessWidget {
@@ -79,15 +77,11 @@ class AddressListByType extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           onTap: () {
-                            // Navigator.of(context).popAndPushNamed(
-                            //   SearchScreen.routeName,
-                            //   arguments: address.id,
-                            // );
                             Provider.of<UserProvider>(
                               context,
                               listen: false,
                             ).updateDropOffLocationAddress(address);
-                            Navigator.of(context).pop();
+                            Navigator.of(context).pop('obtainDirection');
                           },
                           isThreeLine: true,
                           leading: Icon(icon, color: color),

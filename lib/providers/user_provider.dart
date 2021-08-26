@@ -77,8 +77,6 @@ class UserProvider with ChangeNotifier {
 
   void updateDropOffLocationAddress(Address dropOffAddress) {
     dropOffLocation = dropOffAddress;
-    //TODO    DROPOFF CHECK
-    print(dropOffLocation);
     notifyListeners();
   }
 

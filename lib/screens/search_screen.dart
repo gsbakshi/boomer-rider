@@ -56,7 +56,7 @@ class _SearchScreenState extends State<SearchScreen> {
       context,
       listen: false,
     ).updateDropOffLocationAddress(_dropOffAddress);
-    Navigator.of(context).pop();
+    Navigator.of(context).pop('obtainDirection');
   }
 
   @override
@@ -115,6 +115,50 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
       body: Consumer<MapsProvider>(
         builder: (ctx, places, _) {
+          void _autoCompleteSearch(value) async {
+            try {
+              if (value.length == 0) {
+                setState(() {
+                  predictedList = [];
+                });
+                return;
+              }
+              if (value.isEmpty) {
+                return;
+              }
+              await places.findPlace(value);
+              predictedList = places.predictedList;
+            } on HttpException catch (error) {
+              var errorMessage = 'Request Failed';
+              print(error);
+              _snackbar(errorMessage + ' : ' + error.toString());
+            } catch (error) {
+              const errorMessage =
+                  'Could not autocomplete search request. Please try again later.';
+              print(error);
+              _snackbar(errorMessage);
+            }
+          }
+
+          void _getPlaceDetails(String placeId) async {
+            try {
+              await places.getPlaceDetails(placeId);
+              _dropOffAddress = places.dropoffLocation;
+              setState(() {
+                _dropOffController.text = _dropOffAddress.address ?? '';
+              });
+            } on HttpException catch (error) {
+              var errorMessage = 'Request Failed';
+              print(error);
+              _snackbar(errorMessage);
+            } catch (error) {
+              const errorMessage =
+                  'Could not locate you. Please try again later.';
+              print(error);
+              _snackbar(errorMessage);
+            }
+          }
+
           return Column(
             children: [
               SearchField(
@@ -129,7 +173,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     border: InputBorder.none,
                   ),
-                  onSubmitted: (value) {},
                 ),
               ),
               SearchField(
@@ -144,30 +187,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     border: InputBorder.none,
                   ),
-                  onChanged: (value) async {
-                    try {
-                      if (value.length == 0) {
-                        setState(() {
-                          predictedList = [];
-                        });
-                        return;
-                      }
-                      if (value.isEmpty) {
-                        return;
-                      }
-                      await places.findPlace(value);
-                      predictedList = places.predictedList;
-                    } on HttpException catch (error) {
-                      var errorMessage = 'Request Failed';
-                      print(error);
-                      _snackbar(errorMessage + ' : ' + error.toString());
-                    } catch (error) {
-                      const errorMessage =
-                          'Could not autocomplete search request. Please try again later.';
-                      print(error);
-                      _snackbar(errorMessage);
-                    }
-                  },
+                  onChanged: _autoCompleteSearch,
                 ),
               ),
               Container(
@@ -193,26 +213,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: PredictedTile(
                       predictedList[i],
-                      onTap: () async {
-                        try {
-                          await places
-                              .getPlaceDetails(predictedList[i].placeId!);
-                          _dropOffAddress = places.dropoffLocation;
-                          setState(() {
-                            _dropOffController.text =
-                                _dropOffAddress.address ?? '';
-                          });
-                        } on HttpException catch (error) {
-                          var errorMessage = 'Request Failed';
-                          print(error);
-                          _snackbar(errorMessage);
-                        } catch (error) {
-                          const errorMessage =
-                              'Could not locate you. Please try again later.';
-                          print(error);
-                          _snackbar(errorMessage);
-                        }
-                      },
+                      onTap: () => _getPlaceDetails(predictedList[i].placeId!),
                     ),
                   ),
                 ),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../screens/search_screen.dart';
-
 class SearchButton extends StatelessWidget {
   const SearchButton({
     Key? key,
@@ -9,37 +7,32 @@ class SearchButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushNamed(SearchScreen.routeName);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Color(0xffB8AAA3),
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).primaryColorDark,
-              blurRadius: 6,
-              spreadRadius: 0.5,
-              offset: Offset(0.7, 0.7),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.search,
-              color: Color(0xff6D5D54),
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Search Drop Off',
-              style: Theme.of(context).textTheme.headline2,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color(0xffB8AAA3),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColorDark,
+            blurRadius: 6,
+            spreadRadius: 0.5,
+            offset: Offset(0.7, 0.7),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.search,
+            color: Color(0xff6D5D54),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Search Drop Off',
+            style: Theme.of(context).textTheme.headline2,
+          ),
+        ],
       ),
     );
   }
