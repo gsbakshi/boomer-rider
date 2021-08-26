@@ -36,6 +36,7 @@ dependencies:
   geolocator: ^7.4.0
   geocoding: ^2.0.0
   flutter_polyline_points: ^1.0.0
+  animated_text_kit: ^4.2.1
 
 dev_dependencies:
   flutter_test:
