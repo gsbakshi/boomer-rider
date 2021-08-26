@@ -78,7 +78,7 @@ class _SearchScreenState extends State<SearchScreen> {
         context,
         listen: false,
       );
-      _pickUpController.text = addressProvider.pickupLocation.address ?? '';
+      _pickUpController.text = addressProvider.pickupLocation!.address ?? '';
     }
     _isInit = false;
     super.didChangeDependencies();
