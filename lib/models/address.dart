@@ -16,6 +16,7 @@ class Address {
   final String? tag;
 
   @override
-  String toString() =>
-      'Address : ${this.address}, lat: ${this.latitude}, lon: ${this.longitude}, tag: ${this.tag}, name: ${this.name}, id: ${this.id}';
+  String toString() {
+    return 'Address(id: $id, address: $address, latitude: $latitude, longitude: $longitude, name: $name, tag: $tag)';
+  }
 }

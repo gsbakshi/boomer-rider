@@ -1,15 +1,22 @@
 import 'address.dart';
 
 class User {
-  const User({
-    required this.name,
-    required this.mobile,
-    required this.email,
-    this.addressess,
+  User({
+    this.addresses,
+    this.email,
+    this.mobile,
+    this.name,
+    this.id,
   });
 
-  final String name;
-  final String mobile;
-  final String email;
-  final List<Address>? addressess;
+  final List<Address>? addresses;
+  final String? email;
+  final int? mobile;
+  final String? name;
+  final String? id;
+
+  @override
+  String toString() {
+    return 'User(addresses: $addresses, email: $email, mobile: $mobile, name: $name, id: $id)';
+  }
 }

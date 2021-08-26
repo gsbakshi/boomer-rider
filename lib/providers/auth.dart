@@ -56,7 +56,7 @@ class Auth with ChangeNotifier {
         _expiryDate = tokenRes.expirationTime;
         _autoLogout();
         notifyListeners();
-        final url = '${DBUrls.usersRef}/$_userId.json';
+        final url = '${DBUrls.users}/$_userId.json';
         await http.put(
           Uri.parse(url),
           body: json.encode(
