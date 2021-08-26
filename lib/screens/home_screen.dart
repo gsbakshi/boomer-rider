@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 import '../providers/user_provider.dart';
 import '../providers/maps_provider.dart';
 
 import '../helpers/http_exception.dart';
+import '../helpers/direction_helper.dart';
 
 import '../models/address.dart';
 
@@ -18,6 +20,8 @@ import '../widgets/decorated_wrapper.dart';
 import '../widgets/add_new_address.dart';
 import '../widgets/address_list_by_type.dart';
 import '../widgets/floating_appbar_wrapper_with_textfield.dart';
+
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -36,6 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
   late GoogleMapController newMapController;
 
   final _currentLocationInputController = TextEditingController();
+
+  List<LatLng> plineCoordinates = [];
+  Set<Polyline> polylineSet = {};
+
+  Set<Marker> markers = {};
+  Set<Circle> circles = {};
 
   void _snackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -136,6 +146,137 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> getPlaceDirections() async {
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false);
+      final initialPosition = user.pickupLocation;
+      final finalPosition = user.dropOffLocation;
+      final pickupLatLng = LatLng(
+        initialPosition.latitude!,
+        initialPosition.longitude!,
+      );
+      final dropoffLatLng = LatLng(
+        finalPosition.latitude!,
+        finalPosition.longitude!,
+      );
+      final details = await DirectionHelper.obtainPlaceDirectionDetails(
+        pickupLatLng,
+        dropoffLatLng,
+      );
+      final polylinePoints = PolylinePoints();
+      List<PointLatLng> decodedPolylinePointsResult =
+          polylinePoints.decodePolyline(details.encodedPoints!);
+      plineCoordinates.clear();
+      if (decodedPolylinePointsResult.isNotEmpty) {
+        decodedPolylinePointsResult.forEach((PointLatLng point) {
+          plineCoordinates.add(LatLng(point.latitude, point.longitude));
+        });
+      }
+
+      polylineSet.clear();
+
+      setState(() {
+        final polyline = Polyline(
+          color: Theme.of(context).accentColor,
+          polylineId: PolylineId('Place Directions'),
+          jointType: JointType.round,
+          points: plineCoordinates,
+          width: 5,
+          startCap: Cap.roundCap,
+          endCap: Cap.roundCap,
+          geodesic: true,
+        );
+        polylineSet.add(polyline);
+      });
+
+      late LatLngBounds screenBounds;
+      if (pickupLatLng.latitude > dropoffLatLng.latitude &&
+          pickupLatLng.longitude > dropoffLatLng.longitude) {
+        screenBounds = LatLngBounds(
+          southwest: dropoffLatLng,
+          northeast: pickupLatLng,
+        );
+      } else if (pickupLatLng.latitude > dropoffLatLng.latitude) {
+        screenBounds = LatLngBounds(
+          southwest: LatLng(dropoffLatLng.latitude, pickupLatLng.longitude),
+          northeast: LatLng(pickupLatLng.latitude, dropoffLatLng.longitude),
+        );
+      } else if (pickupLatLng.longitude > dropoffLatLng.longitude) {
+        screenBounds = LatLngBounds(
+          southwest: LatLng(pickupLatLng.latitude, dropoffLatLng.longitude),
+          northeast: LatLng(dropoffLatLng.latitude, pickupLatLng.longitude),
+        );
+      } else {
+        screenBounds = LatLngBounds(
+          southwest: pickupLatLng,
+          northeast: dropoffLatLng,
+        );
+      }
+
+      newMapController.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          screenBounds,
+          70,
+        ),
+      );
+
+      Marker pickupMarker = Marker(
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        infoWindow: InfoWindow(
+          title: initialPosition.name,
+          snippet: 'My Location',
+        ),
+        position: pickupLatLng,
+        markerId: MarkerId('Pick Up'),
+      );
+
+      Marker dropoffMarker = Marker(
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        infoWindow: InfoWindow(
+          title: finalPosition.name,
+          snippet: 'Drop Off Location',
+        ),
+        position: dropoffLatLng,
+        markerId: MarkerId('Drop Off'),
+      );
+
+      setState(() {
+        markers.add(pickupMarker);
+        markers.add(dropoffMarker);
+      });
+
+      Circle pickupCircle = Circle(
+        fillColor: Colors.cyan,
+        center: pickupLatLng,
+        radius: 12,
+        strokeWidth: 4,
+        strokeColor: Colors.cyanAccent,
+        circleId: CircleId('Pick Up circle'),
+      );
+      Circle dropoffCircle = Circle(
+        fillColor: Colors.lime,
+        center: dropoffLatLng,
+        radius: 12,
+        strokeWidth: 4,
+        strokeColor: Colors.limeAccent,
+        circleId: CircleId('Drop Off circle'),
+      );
+
+      setState(() {
+        circles.add(pickupCircle);
+        circles.add(dropoffCircle);
+      });
+    } on HttpException catch (error) {
+      var errorMessage = 'Request Failed';
+      print(error);
+      _snackbar(errorMessage);
+    } catch (error) {
+      const errorMessage = 'Could not get directions. Please try again later.';
+      print(error);
+      _snackbar(errorMessage);
+    }
+  }
+
   Future<void> _addAddress(String address, String tag, String name) async {
     try {
       final addressProvider = Provider.of<UserProvider>(
@@ -212,8 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void showAddressesByType(String label) {
-    showModalBottomSheet(
+  void showAddressesByType(String label) async {
+    final res = await showModalBottomSheet(
       context: context,
       shape: modalSheetShape,
       builder: (_) => AddressListByType(
@@ -222,6 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
         deleteAddress: _deleteAddress,
       ),
     );
+    if (res == 'obtainDirection') {
+      await getPlaceDirections();
+    }
   }
 
   final modalSheetShape = RoundedRectangleBorder(
@@ -284,6 +428,9 @@ class _HomeScreenState extends State<HomeScreen> {
               bottom: query.height * 0.3,
               right: 16,
             ),
+            polylines: polylineSet,
+            markers: markers,
+            circles: circles,
             initialCameraPosition: _kGooglePlex,
             onMapCreated: onMapCreated,
           ),
@@ -326,7 +473,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: Theme.of(context).textTheme.headline4,
                         ),
                         SizedBox(height: 16),
-                        SearchButton(),
+                        GestureDetector(
+                          onTap: () async {
+                            final res = await Navigator.of(context).pushNamed(
+                              SearchScreen.routeName,
+                            );
+                            if (res == 'obtainDirection') {
+                              await getPlaceDirections();
+                            }
+                          },
+                          child: SearchButton(),
+                        ),
                         SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
