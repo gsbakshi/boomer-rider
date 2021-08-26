@@ -39,7 +39,7 @@ class UserProvider with ChangeNotifier {
 
   Future<void> fetchUserDetails() async {
     try {
-      final url = '$usersRef/$userId.json?auth=$authToken';
+      final url = '${DBUrls.usersRef}/$userId.json?auth=$authToken';
       final response = await http.get(Uri.parse(url));
       final data = json.decode(response.body);
       if (data == null) {
@@ -98,7 +98,7 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> addAddress(Address address) async {
-    final url = '$usersRef/$userId/addresses.json?auth=$authToken';
+    final url = '${DBUrls.usersRef}/$userId/addresses.json?auth=$authToken';
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -127,7 +127,7 @@ class UserProvider with ChangeNotifier {
   }
 
   Future<void> deleteAddress(String id) async {
-    final url = '$usersRef/$userId/addresses/$id.json?auth=$authToken';
+    final url = '${DBUrls.usersRef}/$userId/addresses/$id.json?auth=$authToken';
     final existingAddressIndex =
         _addresses.indexWhere((element) => element.id == id);
     Address? existingAddress = _addresses[existingAddressIndex];

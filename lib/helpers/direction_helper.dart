@@ -23,7 +23,6 @@ class DirectionHelper {
         throw HttpException(data['error_message']);
       }
       final directionDetail = DirectionDetails.fromJson(data);
-      print(directionDetail);
       return directionDetail;
     } catch (error) {
       print(error);
