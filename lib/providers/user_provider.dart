@@ -56,19 +56,19 @@ class UserProvider with ChangeNotifier {
       final addressesData = data['addresses'];
       final List<Address> loadedAddresses = [];
       if (addressesData != null) {
-      addressesData.forEach((addressId, addressData) {
-        loadedAddresses.insert(
-          0,
-          Address(
-            id: addressId,
-            address: addressData['address'],
-            latitude: addressData['latitude'],
-            longitude: addressData['longitude'],
-            tag: addressData['tag'],
-            name: addressData['name'],
-          ),
-        );
-      });
+        addressesData.forEach((addressId, addressData) {
+          loadedAddresses.insert(
+            0,
+            Address(
+              id: addressId,
+              address: addressData['address'],
+              latitude: addressData['latitude'],
+              longitude: addressData['longitude'],
+              tag: addressData['tag'],
+              name: addressData['name'],
+            ),
+          );
+        });
       }
       _addresses = loadedAddresses;
       _user = User(
@@ -157,7 +157,7 @@ class UserProvider with ChangeNotifier {
     if (response.statusCode >= 400) {
       _addresses.insert(existingAddressIndex, existingAddress);
       notifyListeners();
-      throw HttpException('Could not delete product');
+      throw HttpException('Could not delete address');
     }
     existingAddress = null;
   }
