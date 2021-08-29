@@ -1,15 +1,19 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_geofire/flutter_geofire.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../helpers/platform_keys.dart';
 import '../helpers/http_exception.dart';
+import '../helpers/geofire_helper.dart';
 
 import '../models/address.dart';
 import '../models/predicted_places.dart';
+import '../models/available_driver.dart';
 
 class MapsProvider with ChangeNotifier {
   late Position _currentPosition;
@@ -196,5 +200,68 @@ class MapsProvider with ChangeNotifier {
       print(error);
       throw error;
     }
+  }
+
+  Future<void> initGeofire(void Function() updateAvailableDriversOnMap, bool driversLoaded) async {
+    await Geofire.initialize('boomer/available-drivers');
+    Geofire.queryAtLocation(
+      currentPosition.latitude,
+      currentPosition.longitude,
+      15,
+    )!
+        .listen((map) {
+      print(map);
+      if (map != null) {
+        var callBack = map['callBack'];
+
+        switch (callBack) {
+          case Geofire.onKeyEntered:
+            AvailableDriver driver = AvailableDriver(
+              driverId: map['key'],
+              latitude: map['latitude'],
+              longitude: map['longitude'],
+            );
+            GeofireHelper.availableDriversList.add(driver);
+            if(driversLoaded) updateAvailableDriversOnMap();
+            break;
+
+          case Geofire.onKeyExited:
+            GeofireHelper.removeAvailableDriversFromList(map['key']);
+            updateAvailableDriversOnMap();
+            break;
+
+          case Geofire.onKeyMoved:
+            AvailableDriver driver = AvailableDriver(
+              driverId: map['key'],
+              latitude: map['latitude'],
+              longitude: map['longitude'],
+            );
+            GeofireHelper.updateDriverLocation(driver);
+            updateAvailableDriversOnMap();
+            break;
+
+          case Geofire.onGeoQueryReady:
+            updateAvailableDriversOnMap();
+            break;
+        }
+      }
+    });
+  }
+
+  Future<Set<Marker>> getAvailableDriverMarkers() async {
+    final tMarkers = Set<Marker>();
+    final rnd = Random();
+    for (AvailableDriver driver in GeofireHelper.availableDriversList) {
+      LatLng driverPosition = LatLng(driver.latitude!, driver.longitude!);
+      final rndNum = rnd.nextInt(360).toDouble();
+      Marker marker = Marker(
+        markerId: MarkerId(driver.driverId!),
+        position: driverPosition,
+        icon: await BitmapDescriptor.fromAssetImage(ImageConfiguration(), 'assets/images/car_ios.png'),
+        rotation: rndNum,
+      );
+      tMarkers.add(marker);
+    }
+    return tMarkers;
   }
 }

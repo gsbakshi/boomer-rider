@@ -55,6 +55,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Set<Circle> circles = {};
 
   bool _loading = false;
+
+  bool driversLoaded = false;
+
   int _state = 1;
 
   void _snackbar(String message) {
@@ -106,6 +109,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       );
 
+  Future<void> updateAvailableDriversOnMap() async {
+    setState(() {
+      markers.clear();
+    });
+    final tMarkers = await Provider.of<MapsProvider>(
+      context,
+      listen: false,
+    ).getAvailableDriverMarkers();
+    setState(() {
+      markers = tMarkers;
+    });
+  }
+
   Future<void> locateOnMap() async {
     try {
       final mapProvider = Provider.of<MapsProvider>(context, listen: false);
@@ -123,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         context,
         listen: false,
       ).updatePickUpLocationAddress(pickupAddress);
+      await mapProvider.initGeofire(updateAvailableDriversOnMap, driversLoaded);
     } on HttpException catch (error) {
       var errorMessage = 'Request Failed';
       print(error);
@@ -387,24 +404,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void addAddressModalSheet(String label) {
-    showModalBottomSheet(
-      context: context,
-      shape: modalSheetShape,
-      builder: (_) => AddNewAddress(
-        addAddress: _addAddress,
-        label: label,
-        getLocationAddress: Provider.of<UserProvider>(
-              context,
-              listen: false,
-            ).pickupLocation!.address ??
-            '',
-      ),
-    );
-  }
-
-  void _plugNewAddressToAddressByType(String label) {
-    Navigator.of(context).pop();
-    addAddressModalSheet(label);
+    final pickupLocation = Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).pickupLocation;
+      showModalBottomSheet(
+        context: context,
+        shape: modalSheetShape,
+        isScrollControlled: true,
+        builder: (_) => AddNewAddress(
+          addAddress: _addAddress,
+          label: label,
+          getLocationAddress: pickupLocation?.address ?? '',
+        ),
+      );
   }
 
   Future<void> _deleteAddress(String id) async {
@@ -421,14 +434,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  void showAddressesByType(String label) async {
+  void showAddressesByType(String label, double height) async {
     final res = await showModalBottomSheet(
       context: context,
       shape: modalSheetShape,
-      builder: (_) => AddressListByType(
-        label: label,
-        addAddress: () => _plugNewAddressToAddressByType(label),
-        deleteAddress: _deleteAddress,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        constraints: BoxConstraints(
+          minHeight: height * 0.5,
+          maxHeight: height * 0.7,
+        ),
+        child: AddressListByType(
+          label: label,
+          addAddress: () {
+            Navigator.of(context).pop();
+            addAddressModalSheet(label);
+          },
+          deleteAddress: _deleteAddress,
+        ),
       ),
     );
     await obtainDirection(res);
@@ -437,11 +460,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   double mapBottomPadding(double queryHeight) {
     double bottomPad = 70;
     if (_state == 1) {
-      bottomPad = queryHeight * 0.3;
+      bottomPad = queryHeight * 0.32;
     } else if (_state == 2) {
-      bottomPad = queryHeight * 0.42;
+      bottomPad = queryHeight * 0.44;
     } else if (_state == 3) {
-      bottomPad = queryHeight * 0.3;
+      bottomPad = queryHeight * 0.25;
     }
     return bottomPad;
   }
@@ -477,12 +500,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero).then(
-      (_) => Provider.of<UserProvider>(
-        context,
-        listen: false,
-      ).fetchUserDetails(),
-    );
   }
 
   @override
@@ -494,12 +511,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    var query = MediaQuery.of(context).size;
-    double selectDropOffContainerHeight = query.height * 0.29;
-    double selectRideContainerHeight = query.height * 0.41;
-    double requestingDriverContainerHeight = query.height * 0.29;
+    final mediaQuery = MediaQuery.of(context);
+    final size = mediaQuery.size;
     return Scaffold(
       key: _scaffoldKey,
+      resizeToAvoidBottomInset: true,
       drawer: AppDrawer(),
       floatingActionButtonLocation:
           _state == 1 ? null : FloatingActionButtonLocation.centerFloat,
@@ -507,17 +523,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ? null
           : FloatingActionButton(
               onPressed: _resetApp,
-              backgroundColor: Theme.of(context).primaryColorLight,
+              backgroundColor: Theme.of(context).accentColor,
               child: Icon(Icons.close),
             ),
       body: Stack(
         children: [
           GoogleMap(
             myLocationEnabled: true,
-            padding: EdgeInsets.only(
-              bottom: mapBottomPadding(query.height),
-              right: 16,
-            ),
+            padding: EdgeInsets.only(bottom: mapBottomPadding(size.height)),
             polylines: polylineSet,
             markers: markers,
             circles: circles,
@@ -527,8 +540,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Positioned(
             top: 0,
             child: FloatingAppBarWrapperWithTextField(
-              height: query.height * 0.072,
-              width: query.width,
+              height: size.height * 0.072,
+              width: size.width,
               leadingIcon: Icons.menu,
               onTapLeadingIcon: _openDrawer,
               hintLabel: 'Your Location',
@@ -538,69 +551,177 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           Positioned(
             bottom: 0,
-            child: SafeArea(
-              child: AnimatedSize(
-                duration: Duration(milliseconds: 360),
-                vsync: this,
-                curve: Curves.easeOut,
-                child: Container(
-                  height: _state == 1 ? selectDropOffContainerHeight : 0,
-                  width: query.width,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: DecoratedWrapper(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 18,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10),
-                          Text(
-                            'Hi There',
-                            style: Theme.of(context).textTheme.headline1,
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Where to?',
-                            style: Theme.of(context).textTheme.headline4,
-                          ),
-                          SizedBox(height: 16),
-                          GestureDetector(
-                            onTap: () async {
-                              final res = await Navigator.of(context).pushNamed(
-                                SearchScreen.routeName,
+            child: AnimatedSize(
+              duration: Duration(milliseconds: 360),
+              vsync: this,
+              curve: Curves.easeOut,
+              child: Container(
+                constraints:
+                    _state == 1 ? null : BoxConstraints(maxHeight: 0.0),
+                width: size.width,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: DecoratedWrapper(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 18,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 10),
+                        Text(
+                          'Hi There',
+                          style: Theme.of(context).textTheme.headline1,
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Where to?',
+                          style: Theme.of(context).textTheme.headline4,
+                        ),
+                        SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () async {
+                            final res = await Navigator.of(context).pushNamed(
+                              SearchScreen.routeName,
+                            );
+                            await obtainDirection(res);
+                          },
+                          child: SearchButton(),
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: addressType.map(
+                            (card) {
+                              final icon = card['icon'];
+                              final label = card['label'];
+
+                              return Consumer<UserProvider>(
+                                builder: (ctx, check, _) => IconCard(
+                                  icon: icon,
+                                  label: check.checkIfAddressExistsByType(label)
+                                      ? label
+                                      : 'Add $label',
+                                  onTapHandler:
+                                      check.checkIfAddressExistsByType(label)
+                                          ? () => showAddressesByType(
+                                              label, size.height)
+                                          : () => addAddressModalSheet(label),
+                                ),
                               );
-                              await obtainDirection(res);
                             },
-                            child: SearchButton(),
+                          ).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            child: AnimatedSize(
+              duration: Duration(milliseconds: 240),
+              vsync: this,
+              curve: Curves.bounceInOut,
+              child: Container(
+                constraints:
+                    _state == 2 ? null : BoxConstraints(maxHeight: 0.0),
+                width: size.width,
+                margin: _state == 2
+                    ? const EdgeInsets.symmetric(vertical: 70)
+                    : null,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: DecoratedWrapper(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 18,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 10),
+                        Text(
+                          'Select Ride',
+                          style: Theme.of(context).textTheme.headline4,
+                        ),
+                        SizedBox(height: 16),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .primaryColorDark
+                                .withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: addressType.map(
-                              (card) {
-                                final icon = card['icon'];
-                                final label = card['label'];
-                                return Consumer<UserProvider>(
-                                  builder: (ctx, check, _) => IconCard(
-                                    icon: icon,
-                                    label:
-                                        check.checkIfAddressExistsByType(label)
-                                            ? label
-                                            : 'Add $label',
-                                    onTapHandler:
-                                        check.checkIfAddressExistsByType(label)
-                                            ? () => showAddressesByType(label)
-                                            : () => addAddressModalSheet(label),
-                                  ),
-                                );
-                              },
-                            ).toList(),
+                          child: ListTile(
+                            leading: Image.asset(
+                              'assets/images/taxi.png',
+                            ),
+                            title: Text(
+                              'Car',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              tripDetails.distanceText ?? '-- km',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                              ),
+                            ),
+                            trailing: Text(
+                              '\$${PricingHelper.calculateFares(tripDetails.durationValue ?? 0, tripDetails.distanceValue ?? 0).toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .primaryColorDark
+                                .withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            onTap: () {
+                              print('Change Payment Method');
+                            },
+                            leading: Icon(
+                              Icons.money,
+                              color: Color(0xffB8AAA3),
+                            ),
+                            trailing: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: Color(0xffB8AAA3),
+                            ),
+                            title: Text(
+                              'Cash',
+                              style: TextStyle(
+                                color: Color(0xffB8AAA3),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        CustomButton(
+                          label: 'Request Ride',
+                          onTap: _requestRide,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -615,109 +736,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 vsync: this,
                 curve: Curves.bounceInOut,
                 child: Container(
-                  height: _state == 2 ? selectRideContainerHeight : 0,
-                  width: query.width,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: DecoratedWrapper(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 18,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10),
-                          Text(
-                            'Select Ride',
-                            style: Theme.of(context).textTheme.headline4,
-                          ),
-                          SizedBox(height: 16),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .primaryColorDark
-                                  .withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ListTile(
-                              leading: Image.asset(
-                                'assets/images/taxi.png',
-                              ),
-                              title: Text(
-                                'Car',
-                                style: TextStyle(
-                                  color: Color(0xffB8AAA3),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              subtitle: Text(
-                                tripDetails.distanceText ?? '-- km',
-                                style: TextStyle(
-                                  color: Color(0xffB8AAA3),
-                                ),
-                              ),
-                              trailing: Text(
-                                '\$${PricingHelper.calculateFares(tripDetails.durationValue ?? 0, tripDetails.distanceValue ?? 0).toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color: Color(0xffB8AAA3),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .primaryColorDark
-                                  .withOpacity(0.6),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ListTile(
-                              onTap: () {
-                                print('Change Payment Method');
-                              },
-                              leading: Icon(
-                                Icons.money,
-                                color: Color(0xffB8AAA3),
-                              ),
-                              trailing: Icon(
-                                Icons.keyboard_arrow_down,
-                                color: Color(0xffB8AAA3),
-                              ),
-                              title: Text(
-                                'Cash',
-                                style: TextStyle(
-                                  color: Color(0xffB8AAA3),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          CustomButton(
-                            label: 'Request Ride',
-                            onTap: _requestRide,
-                          ),
-                        ],
-                      ),
-                    ),
+                  height: size.height * 0.2,
+                  constraints:
+                      _state == 3 ? null : BoxConstraints(maxHeight: 0.0),
+                  width: size.width,
+                  margin: _state == 3
+                      ? const EdgeInsets.symmetric(vertical: 70)
+                      : null,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
                   ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            child: SafeArea(
-              child: AnimatedSize(
-                duration: Duration(milliseconds: 240),
-                vsync: this,
-                curve: Curves.bounceInOut,
-                child: Container(
-                  height: _state == 3 ? requestingDriverContainerHeight : 0,
-                  width: query.width,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: DecoratedWrapper(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -747,8 +776,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
           if (_loading)
             Container(
-              height: query.height,
-              width: query.width,
+              height: size.height,
+              width: size.width,
               color: Colors.black26,
               child: Center(
                 child: CircularProgressIndicator(
