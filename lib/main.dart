@@ -8,6 +8,7 @@ import 'providers/ride_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/maps_provider.dart';
 
+import 'screens/about_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
@@ -37,7 +38,8 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProxyProvider2<Auth, UserProvider, RideProvider>(
           create: (_) => RideProvider(),
-          update: (_, auth, userData, rideData) => rideData!..update(auth, userData),
+          update: (_, auth, userData, rideData) =>
+              rideData!..update(auth, userData),
         ),
       ],
       child: Consumer<Auth>(
@@ -66,6 +68,7 @@ class MyApp extends StatelessWidget {
       AuthScreen.routeName: (ctx) => AuthScreen(),
       HomeScreen.routeName: (ctx) => HomeScreen(),
       SearchScreen.routeName: (ctx) => SearchScreen(),
+      AboutScreen.routeName: (ctx) => AboutScreen(),
     };
   }
 }
