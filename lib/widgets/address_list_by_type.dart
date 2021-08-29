@@ -37,84 +37,104 @@ class AddressListByType extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.headline4,
-          ),
-          SizedBox(height: 2),
-          Text(
-            'Select Drop Off Location',
-            style: Theme.of(context).textTheme.headline2,
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 30, top: 10, right: 120),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).primaryColorLight,
-                  width: 2,
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.headline4,
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Select Drop Off Location',
+                style: Theme.of(context).textTheme.headline2,
+              ),
+              Container(
+                margin: const EdgeInsets.only(bottom: 0, top: 10, right: 120),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).primaryColorLight,
+                      width: 2,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Consumer<UserProvider>(
-                builder: (ctx, data, _) => Column(
-                  children: data.addressByType(label).map(
-                    (address) {
-                      final icon = getIcon();
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: ListTile(
-                          tileColor: Theme.of(context).primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          onTap: () {
-                            Provider.of<UserProvider>(
-                              context,
-                              listen: false,
-                            ).updateDropOffLocationAddress(address);
-                            Navigator.of(context).pop('obtainDirection');
+              Flexible(
+                child: Consumer<UserProvider>(
+                  builder: (ctx, data, _) => SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 30, bottom: 30),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: data.addressByType(label).map(
+                          (address) {
+                            final icon = getIcon();
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12.0),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListTile(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                onTap: () {
+                                  Provider.of<UserProvider>(
+                                    context,
+                                    listen: false,
+                                  ).updateDropOffLocationAddress(address);
+                                  Navigator.of(context).pop('obtainDirection');
+                                },
+                                isThreeLine: true,
+                                leading: Icon(icon, color: color),
+                                title: Text(
+                                  address.name!,
+                                  style: TextStyle(
+                                    color: color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  address.address!,
+                                  style: TextStyle(color: color),
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(Icons.delete),
+                                  color: color,
+                                  onPressed: () => deleteAddress(address.id!),
+                                ),
+                              ),
+                            );
                           },
-                          isThreeLine: true,
-                          leading: Icon(icon, color: color),
-                          title: Text(
-                            address.name!,
-                            style: TextStyle(
-                              color: color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Text(
-                            address.address!,
-                            style: TextStyle(color: color),
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete),
-                            color: color,
-                            onPressed: () => deleteAddress(address.id!),
-                          ),
-                        ),
-                      );
-                    },
-                  ).toList(),
+                        ).toList(),
+                      ),
+                    ),
+                  ),
                 ),
               ),
+              SizedBox(height: 40),
+            ],
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: CustomButton(
+              label: 'Add Address',
+              onTap: addAddress,
             ),
           ),
-          CustomButton(
-            label: 'Add Address',
-            onTap: addAddress,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

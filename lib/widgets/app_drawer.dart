@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth.dart';
 import '../providers/user_provider.dart';
 
+import '../screens/about_screen.dart';
+
 class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -86,8 +88,7 @@ class AppDrawer extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyText2,
               ),
               onTap: () {
-                // Navigator.of(context)
-                //     .pushReplacementNamed(UserProductsScreen.routeName);
+                Navigator.of(context).pushNamed(AboutScreen.routeName);
               },
             ),
             Divider(color: Color(0xff6D5D54)),

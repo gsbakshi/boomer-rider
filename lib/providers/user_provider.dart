@@ -15,6 +15,7 @@ class UserProvider with ChangeNotifier {
   void update(Auth auth) {
     authToken = auth.token;
     userId = auth.userId;
+    fetchUserDetails();
     addresses;
   }
 
@@ -27,8 +28,8 @@ class UserProvider with ChangeNotifier {
 
   late User _user;
 
-  late Address? pickupLocation;
-  late Address? dropOffLocation;
+  Address? pickupLocation;
+  Address? dropOffLocation;
 
   List<Address> _addresses = [];
 

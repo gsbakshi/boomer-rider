@@ -66,10 +66,16 @@ class _AddNewAddressState extends State<AddNewAddress> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final bottomPad = mediaQuery.viewInsets.bottom == 0;
+    final insetPad = bottomPad
+        ? mediaQuery.size.height * 0.1
+        : mediaQuery.viewInsets.bottom * 1.1;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, 24, 16, insetPad),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Add New Address',
@@ -88,74 +94,76 @@ class _AddNewAddressState extends State<AddNewAddress> {
           ),
           Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  tileColor: Theme.of(context).primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    tileColor: Theme.of(context).primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onTap: _getCurrentLocation,
+                    leading: Icon(
+                      Icons.gps_fixed_rounded,
+                      color: Color(0xffB8AAA3),
+                    ),
+                    title: Text(
+                      'Use Current Location',
+                      style: TextStyle(color: Color(0xffB8AAA3)),
+                    ),
+                    minLeadingWidth: 0,
                   ),
-                  onTap: _getCurrentLocation,
-                  leading: Icon(
-                    Icons.gps_fixed_rounded,
-                    color: Color(0xffB8AAA3),
+                  SizedBox(height: 10),
+                  CustomTextField.underline(
+                    label: 'Address',
+                    controller: _addressController,
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Field is empty';
+                      }
+                    },
+                    onSaved: (value) {
+                      _addressData['address'] = value!;
+                    },
                   ),
-                  title: Text(
-                    'Use Current Location',
-                    style: TextStyle(color: Color(0xffB8AAA3)),
+                  SizedBox(height: 10),
+                  CustomTextField.underline(
+                    label: 'Label',
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Field is empty';
+                      }
+                    },
+                    onSaved: (value) {
+                      _addressData['label'] = value!;
+                    },
                   ),
-                  minLeadingWidth: 0,
-                ),
-                SizedBox(height: 10),
-                CustomTextField.underline(
-                  label: 'Address',
-                  controller: _addressController,
-                  textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Field is empty';
-                    }
-                  },
-                  onSaved: (value) {
-                    _addressData['address'] = value!;
-                  },
-                ),
-                SizedBox(height: 10),
-                CustomTextField.underline(
-                  label: 'Label',
-                  textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Field is empty';
-                    }
-                  },
-                  onSaved: (value) {
-                    _addressData['label'] = value!;
-                  },
-                ),
-                SizedBox(height: 10),
-                CustomTextField.underline(
-                  label: 'Tag',
-                  controller: _tagController,
-                  textInputAction: TextInputAction.next,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Field is empty';
-                    }
-                  },
-                  onSaved: (value) {
-                    _addressData['tag'] = value!;
-                  },
-                ),
-                SizedBox(height: 36),
-                CustomButton(
-                  label: 'Save Address',
-                  onTap: _submit,
-                ),
-              ],
+                  SizedBox(height: 10),
+                  CustomTextField.underline(
+                    label: 'Tag',
+                    controller: _tagController,
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Field is empty';
+                      }
+                    },
+                    onSaved: (value) {
+                      _addressData['tag'] = value!;
+                    },
+                  ),
+                  SizedBox(height: 36),
+                  CustomButton(
+                    label: 'Save Address',
+                    onTap: _submit,
+                  ),
+                ],
+              ),
             ),
           )
         ],

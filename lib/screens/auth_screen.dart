@@ -185,6 +185,7 @@ class _AuthScreenState extends State<AuthScreen>
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
@@ -192,9 +193,7 @@ class _AuthScreenState extends State<AuthScreen>
             SizedBox(height: 70),
             SplashedFlex(),
             SizedBox(height: 40),
-            SideTabbedTitle(
-              _authMode == AuthMode.Login ? 'Login' : 'Sign Up',
-            ),
+            SideTabbedTitle(_authMode == AuthMode.Login ? 'Login' : 'Sign Up'),
             AnimatedContainer(
               duration: Duration(milliseconds: 200),
               curve: Curves.easeIn,
@@ -295,7 +294,9 @@ class _AuthScreenState extends State<AuthScreen>
                     CustomTextField(
                       label: 'Password',
                       obscure: _obscure,
-                      textInputAction: TextInputAction.next,
+                      textInputAction: _authMode == AuthMode.Signup
+                          ? TextInputAction.next
+                          : TextInputAction.done,
                       controller: _passwordController,
                       validator: (value) {
                         if (value!.isEmpty) {
