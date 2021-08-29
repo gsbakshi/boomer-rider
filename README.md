@@ -19,23 +19,26 @@ An Uber-like application made using Flutter.
 
 ### Features
 
-- [x] Driver is able to register in the system;
-- [x] Driver is able to login into the system;
-- [x] Driver is able to view his profile info;
-- [x] Driver is able to add cars;
-- [x] Driver is able to go online/offline depending on their availability;
-- [x] Driver is get go online/offline depending on their availability;
-- [x] Driver sends a stream of current location updates when online to find new nearby ride requests;
-- [x] Driver is able to logout;
+- [x] User is able to register in the system
+- [x] User is able to login into the system
+- [x] User is able to view, add and delete addresses
+- [x] User is able to view their profile info
+- [x] User is able to view their current location
+- [x] User is able to select their dropoff point
+- [x] Autocomplete enabled in the search bar
+- [x] Geocoding and Reverse Geocoding enabled
+- [x] User is able to get directions from their pickup point to drop off location
+- [x] User is able to view near by drivers
+- [x] User is able to create a ride request
+- [x] User is able to logout
 
 ### Issues
 
-- [x] Driver is not able to view all the cars;
-- [x] Driver is not able to edit their details;
-- [x] Driver is not able to delete their account;
+- [x] User is not able to move past placing a request for ride - feature has not been extended past that point
+- [x] User is not able to edit their details
+- [x] User is not able to delete their account
 
 ``` The issues have not been resovled due to laziness and non-requirement. ```
 
 
-
-*** :bang: :bang: This application is only for showcasing purposes. ***
+***This application is only for showcasing purposes.***
