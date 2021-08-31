@@ -294,6 +294,7 @@ class _AuthScreenState extends State<AuthScreen>
                     CustomTextField(
                       label: 'Password',
                       obscure: _obscure,
+                      keyboardType: TextInputType.text,
                       textInputAction: _authMode == AuthMode.Signup
                           ? TextInputAction.next
                           : TextInputAction.done,
@@ -346,6 +347,7 @@ class _AuthScreenState extends State<AuthScreen>
                             child: CustomTextField(
                               label: 'Confirm Password',
                               obscure: true,
+                              keyboardType: TextInputType.text,
                               textInputAction: TextInputAction.done,
                               focusNode: _focusNode,
                               validator: (value) {

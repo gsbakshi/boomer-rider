@@ -116,7 +116,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final tMarkers = await Provider.of<MapsProvider>(
       context,
       listen: false,
-    ).getAvailableDriverMarkers();
+    ).getAvailableDriverMarkers(
+      createLocalImageConfiguration(
+        context,
+        size: Size(2, 2),
+      ),
+    );
     setState(() {
       markers = tMarkers;
     });
@@ -408,16 +413,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       context,
       listen: false,
     ).pickupLocation;
-      showModalBottomSheet(
-        context: context,
-        shape: modalSheetShape,
-        isScrollControlled: true,
-        builder: (_) => AddNewAddress(
-          addAddress: _addAddress,
-          label: label,
-          getLocationAddress: pickupLocation?.address ?? '',
-        ),
-      );
+    showModalBottomSheet(
+      context: context,
+      shape: modalSheetShape,
+      isScrollControlled: true,
+      builder: (_) => AddNewAddress(
+        addAddress: _addAddress,
+        label: label,
+        getLocationAddress: pickupLocation?.address ?? '',
+      ),
+    );
   }
 
   Future<void> _deleteAddress(String id) async {
@@ -528,14 +533,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
       body: Stack(
         children: [
-          GoogleMap(
-            myLocationEnabled: true,
-            padding: EdgeInsets.only(bottom: mapBottomPadding(size.height)),
-            polylines: polylineSet,
-            markers: markers,
-            circles: circles,
-            initialCameraPosition: _kGooglePlex,
-            onMapCreated: onMapCreated,
+          Consumer<MapsProvider>(
+            builder: (ctx, maps, _) => FutureBuilder(
+              future: maps.checkPermissions(),
+              builder: (ctx, snapshot) => maps.isPermissionsInit
+                  ? CircularProgressIndicator(
+                      color: Theme.of(context).accentColor,
+                    )
+                  : GoogleMap(
+                      myLocationEnabled: true,
+                      padding: EdgeInsets.only(
+                          bottom: mapBottomPadding(size.height)),
+                      polylines: polylineSet,
+                      markers: markers,
+                      circles: circles,
+                      initialCameraPosition: _kGooglePlex,
+                      onMapCreated: onMapCreated,
+                    ),
+            ),
           ),
           Positioned(
             top: 0,
