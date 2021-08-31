@@ -3,7 +3,7 @@
 
 An Uber-like application made using Flutter.
 
-Currently this applications supports fetching the user's current location and location nearby drivers. Primary use case of this application is to help daily commuters book a ride and reach their destination such as work place, home, cafe, or any place the user visits regulary, in the quickest way and least amount of taps.
+Currently this applications supports fetching the user's current location and locating nearby drivers. Primary use case of this application is to help daily commuters book a ride and reach their destination, such as work place, home, cafe, or any place the user visits regulary, in the quickest way and least amount of taps possible.
 
 The application features have not been extended to support bookings and driver confirmation, as this is only for showcasing purposes.
 
