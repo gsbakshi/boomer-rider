@@ -36,6 +36,27 @@ class MapsProvider with ChangeNotifier {
 
   Address get geocodedAddress => _geocodedAddress;
 
+  bool isPermissionsInit = true;
+
+  Future<bool> checkPermissions() async {
+    LocationPermission permission;
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return false;
+      }
+      isPermissionsInit = false;
+      notifyListeners();
+      return true;
+    } else {
+      isPermissionsInit = false;
+      notifyListeners();
+      return true;
+    }
+  }
+
   Future<String> _reverseGeocode(Position position) async {
     try {
       String address = '';
@@ -65,21 +86,23 @@ class MapsProvider with ChangeNotifier {
   }
 
   Future<void> _getMapPosition(GoogleMapController mapController) async {
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
+    final check = await checkPermissions();
+    if (check) {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      _currentPosition = position;
 
-    _currentPosition = position;
+      LatLng latLngPosition = LatLng(position.latitude, position.longitude);
+      CameraPosition cameraPosition = new CameraPosition(
+        target: latLngPosition,
+        zoom: 14,
+      );
 
-    LatLng latLngPosition = LatLng(position.latitude, position.longitude);
-    CameraPosition cameraPosition = new CameraPosition(
-      target: latLngPosition,
-      zoom: 14,
-    );
-
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(cameraPosition),
-    );
+      mapController.animateCamera(
+        CameraUpdate.newCameraPosition(cameraPosition),
+      );
+    }         
   }
 
   Future<void> locatePosition(
@@ -202,7 +225,8 @@ class MapsProvider with ChangeNotifier {
     }
   }
 
-  Future<void> initGeofire(void Function() updateAvailableDriversOnMap, bool driversLoaded) async {
+  Future<void> initGeofire(
+      void Function() updateAvailableDriversOnMap, bool driversLoaded) async {
     await Geofire.initialize('boomer/available-drivers');
     Geofire.queryAtLocation(
       currentPosition.latitude,
@@ -222,7 +246,7 @@ class MapsProvider with ChangeNotifier {
               longitude: map['longitude'],
             );
             GeofireHelper.availableDriversList.add(driver);
-            if(driversLoaded) updateAvailableDriversOnMap();
+            if (driversLoaded) updateAvailableDriversOnMap();
             break;
 
           case Geofire.onKeyExited:
@@ -248,7 +272,8 @@ class MapsProvider with ChangeNotifier {
     });
   }
 
-  Future<Set<Marker>> getAvailableDriverMarkers() async {
+  Future<Set<Marker>> getAvailableDriverMarkers(
+      ImageConfiguration imageConfig) async {
     final tMarkers = Set<Marker>();
     final rnd = Random();
     for (AvailableDriver driver in GeofireHelper.availableDriversList) {
@@ -257,7 +282,10 @@ class MapsProvider with ChangeNotifier {
       Marker marker = Marker(
         markerId: MarkerId(driver.driverId!),
         position: driverPosition,
-        icon: await BitmapDescriptor.fromAssetImage(ImageConfiguration(), 'assets/images/car_ios.png'),
+        icon: await BitmapDescriptor.fromAssetImage(
+          imageConfig,
+          'assets/images/car_ios.png',
+        ),
         rotation: rndNum,
       );
       tMarkers.add(marker);
