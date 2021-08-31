@@ -3,7 +3,15 @@
 
 An Uber-like application made using Flutter.
 
+Currently this applications supports fetching the user's current location and location nearby drivers. Primary use case of this application is to help daily commuters book a ride and reach their destination such as work place, home, cafe, or any place the user visits regulary, in the quickest way and least amount of taps.
+
+The application features have not been extended to support bookings and driver confirmation, as this is only for showcasing purposes.
+
+The supporting [Driver App](https://github.com/gsbakshi/boomer-driver) can be checked out as well. It's only purpose at the moment is to register a driver and mark them as available, if online, and display on the map to the riders looking to hail a ride from nearby, on the [Rider App](https://github.com/gsbakshi/boomer-rider).
+
 `Supports both iOS and Android.`
+
+View [screenshots](https://github.com/gsbakshi/boomer-rider/tree/main/screenshots)
 
 ## Table of contents
 
@@ -41,4 +49,4 @@ An Uber-like application made using Flutter.
 ``` The issues have not been resovled due to laziness and non-requirement. ```
 
 
-***This application is only for showcasing purposes.***
+*This application is only for showcasing purposes.*
